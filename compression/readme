@@ -1,0 +1,4 @@
+parcompress_wrf.sh - sbmits job to queue and runs /home/spfm000/bin/cmpr_wrf.sh with gnuparaller
+run_parcompress_wrf.sh - runs parcompress_wrf.sh for a sepcific diretory
+
+

@@ -1,0 +1,12 @@
+################333
+#This list is inored by git
+###########################
+
+*.png
+*.csv
+*.jpg
+*.pyc
+.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+**/.~*
+.~*
