@@ -18,6 +18,13 @@ script (edit before running).
 | `compute_seasonal_changes_CanRCM4.py` | CanRCM4 gridded daily (tas, pr, sfcWind) | `seasonal_deltas_and_pvals_{t,pr,wind}_{period}_CanRCM4.npz` |
 | `compute_seasonal_changes_CanESM2.py` | raw CanESM2 gridded daily | `seasonal_deltas_and_pvals_{t,pr,wind}_{period}_CanESM2.npz` |
 
+### Seasonal-cycle (Chen et al. 2019) scripts
+
+| script | what it computes | output |
+|--------|------------------|--------|
+| `compute_seasonal_changes_cycles.py` | seasonal amplitude (peak-to-peak) change %, and circular day-of-max/min shifts vs historical, per grid cell | `DATA/WRF/MEANS/{var}_seasonalAmp_change_{period}.nc` — consumed by `../land_and_ocean/Regional_Averages_sc_chen.ipynb` |
+| `compute_seas_amplitudes_chen.py` | same diagnostics, but area-weighted land/ocean averages (mask from `domain/geo_em.d03.nc`) | `DATA/WRF/MEANS/{var}_seasonalAmp_landocean_avg_{period}.csv` — consumed by `../land_and_ocean/Regional_Averages_seasonal.ipynb` |
+
 Outputs go to the `out_file` path in each script (absolute GPFS path).
 `t` = absolute change (K); `pr`/`wind` = relative change (%).
 
@@ -31,6 +38,8 @@ Outputs go to the `out_file` path in each script (absolute GPFS path).
 - `AnnualAverages.ipynb` — annual (rather than seasonal) mean changes.
 - `Elevation_vs_change.ipynb` — bins monthly mean changes by elevation
   using WRF d03 data directly (self-contained; no external scripts).
+- The Chen seasonal-cycle outputs are plotted in `../land_and_ocean/`
+  (`Regional_Averages_sc_chen.ipynb`, `Regional_Averages_seasonal.ipynb`).
 
 ## CORDEX / CMIP5 panels (provenance note)
 
