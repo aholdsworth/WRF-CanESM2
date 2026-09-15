@@ -5,6 +5,9 @@
 *.png
 *.csv
 *.jpg
+*.npz
+*.nc
+*.log
 *.pyc
 .ipynb_checkpoints/
 **/.ipynb_checkpoints/
