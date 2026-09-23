@@ -1,9 +1,11 @@
 # Buoy wind-speed validation
 
 Validation of 10 m wind speed against North Pacific / BC-coast buoy
-observations (1986–2005), across five model columns: WRF d01 (~75 km), d02
-(~25 km), d03 (~8 km) downscalings of CanESM2, raw CanESM2 (~150 km, the
-coarsest column), and CanRCM4 (~4 km). This is the buoy analogue of the
+observations (1986–2005), across five model columns: WRF d01 (outer nest,
+75 km), d02 (middle nest, 15 km) and d03 (inner nest, 3 km) downscalings of
+CanESM2, raw CanESM2 (the parent GCM, ~100 km — the coarsest column), and
+CanRCM4 (~25 km, a comparable downscaling of CanESM2). This is the buoy
+analogue of the
 land-station analysis (see `DATA_INVENTORY.md` M12 in the working tree).
 
 The **mathematical description of the methods** (height scaling, the 90 %

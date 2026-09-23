@@ -120,12 +120,12 @@ cell-centre quadrilateral, $u,v \in [0,1]$.`
 The weights sum to one, are non-negative, and depend only on the buoy
 position and the source grid (time-invariant). The same bilinear convention
 is used for all three WRF domains and for the ECCC/NOAA set, so the columns
-are directly comparable. **Resolution caveat (D01):** the ~75 km D01 cells
+are directly comparable. **Resolution caveat (D01):** the 75 km D01 cells
 are ≈0.7° across, so a buoy may lie up to ≈0.35° from its nearest D01 cell
-centre and the value is interpolated between four cell centres; D02/D03
-buoy positions fall well inside a single cell. This sub-grid placement
-uncertainty is specific to the coarsest **WRF** column (CanESM2 at ~150 km
-is the coarsest model overall).
+centre and the value is interpolated between four cell centres; D02 (15 km)
+/ D03 (3 km) buoy positions fall well inside a single cell. This sub-grid
+placement uncertainty is specific to the coarsest **WRF** column (CanESM2,
+the parent GCM at ~100 km, is the coarsest model overall).
 
 ---
 

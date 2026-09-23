@@ -15,9 +15,10 @@ fixed (D01 pooled bias moved from a spurious +23.5 % to −10.8 %).
 
 Twelve North Pacific / BC-coast buoys with 10-min wind-vector records
 (1986–2005) were used to validate 10 m wind speed from five model columns:
-WRF downscalings of CanESM2 on nested domains D01 (~75 km), D02 (~25 km) and
-D03 (~8 km), CanESM2 itself at its native ~150 km resolution (the coarsest
-column), and CanRCM4 (~4 km regional). Observed wind speed is the magnitude
+WRF downscalings of CanESM2 on nested domains D01 (outer nest, ~75 km), D02
+(middle nest, ~15 km) and D03 (inner nest, ~3 km), CanESM2 itself at its
+native ~100 km resolution (the parent GCM, the coarsest column), and
+CanRCM4 (~25 km, a comparable downscaling of CanESM2). Observed wind speed is the magnitude
 of the two-component anemometer vector at 5 m, scaled up to 10 m with the
 logarithmic wind profile, z0 = 2 mm (factor 1.0684, applied to the
 observations only); model values are used natively at 10 m. Both records are
@@ -33,26 +34,26 @@ surviving years: 46005, 46041, 46131, 46146, 46204 and 46206.
 Pooled results (6-buoy core): WRF D01 −10.8 % bias (MAE 1.35, RMSE 1.45 m s⁻¹),
 WRF D02 +5.0 % (0.69, 0.82), WRF D03 +9.0 % (0.66, 0.78), CanESM2 −1.2 %
 (0.96, 1.05) and CanRCM4 +16.2 % (1.11, 1.22). The mid-resolution WRF D02
-shows the smallest absolute error of the five columns, and the 8 km WRF D03
-the lowest MAE/RMSE; the coarsest column (CanESM2, ~150 km) is the most
+shows the smallest absolute error of the five columns, and the 3 km WRF D03
+the lowest MAE/RMSE; the coarsest column (CanESM2, ~100 km) is the most
 accurate in mean bias (−1.2 %) but with larger error magnitude than the WRF
 downscalings; CanRCM4 carries a large +16 % wind-speed bias. The D03 pooled
 obs mean is 6.00 m s⁻¹ rather than 6.25 because buoy 46005 sits off the D03
 nest domain and is dropped from that column only. Note on D01 placement: the
-~75 km D01 cells are ~0.7° across, so buoy positions fall up to ~0.5° from
+75 km D01 cells are ~0.7° across, so buoy positions fall up to ~0.35° from
 the nearest cell centre; the D01 column therefore carries an extra sub-grid
 placement uncertainty not present in D02/D03 (where buoy positions fall
-inside a single cell).
+well inside a single cell).
 
 ## 2. Table — pooled skill summary (6-buoy core, ≥8 shared years)
 
 | Model | n buoys | Obs mean (m/s) | Model mean (m/s) | Bias (%) | MAE (m/s) | RMSE (m/s) |
 |---|---|---|---|---|---|---|
 | WRF D01 (~75 km)  | 6 | 6.25 | 5.58 | −10.8 | 1.35 | 1.45 |
-| WRF D02 (~25 km)  | 6 | 6.25 | 6.56 |  +5.0 | 0.69 | 0.82 |
-| WRF D03 (~8 km)   | 5 | 6.00 | 6.54 |  +9.0 | 0.66 | 0.78 |
-| CanESM2 (~150 km) | 6 | 6.25 | 6.18 |  −1.2 | 0.96 | 1.05 |
-| CanRCM4 (~4 km)   | 6 | 6.25 | 7.26 | +16.2 | 1.11 | 1.22 |
+| WRF D02 (~15 km)  | 6 | 6.25 | 6.56 |  +5.0 | 0.69 | 0.82 |
+| WRF D03 (~3 km)   | 5 | 6.00 | 6.54 |  +9.0 | 0.66 | 0.78 |
+| CanESM2 (~100 km) | 6 | 6.25 | 6.18 |  −1.2 | 0.96 | 1.05 |
+| CanRCM4 (~25 km)  | 6 | 6.25 | 7.26 | +16.2 | 1.11 | 1.22 |
 
 *WRF D03 core is 5 buoys (46005 excluded — off the D03 nest domain); its obs
 mean is therefore over the 5 in-domain buoys.*
