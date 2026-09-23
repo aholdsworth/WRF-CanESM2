@@ -23,8 +23,12 @@ same metrics), with temperature substitutions:
                  (daily, 1850-2005, sliced to 1986-2005; K)
       CanRCM4    data/cdo_extractions/canrcm4_buoys/tas_buoy_<ID>.nc
                  (daily, 1986-2005; K)
-      WRF D02/D03: no buoy t extractions yet -> columns are pending and
-                  omitted from this run.
+      WRF D02    data/wrf_stations/t_d02_st<ID>.nc  (hourly T2, K; the 6
+                 rotated Sep-15 PFM ECCC files were re-extracted 2026-09-23
+                 with verified coords - see extract_buoy_t_parallel.sh)
+      WRF D03    data/wrf_stations/t_d03_st<ID>.nc  (hourly T2, K; same
+                 re-extraction; 46005 EXCLUDED - its nearest D03 cell is
+                 1.16 deg away, an off-domain artifact)
   * D01 75 km sub-grid placement caveat: buoy position up to ~0.35 deg
     from the nearest cell centre (documented, same as wind D01).
 
@@ -68,7 +72,11 @@ TRUTH = {  # .mat-header coords (lon, lat in deg), station_cdo/buoys/buoy_descs.
     '46050': (-124.514667, 44.6775), '46087': (-124.726333, 48.493),
     '46088': (-123.164667, 48.333667), '46089': (-125.819167, 45.893333),
 }
-MODELS = ('WRF_d01', 'CanESM2', 'CanRCM4')
+MODELS = ('WRF_d01', 'WRF_d02', 'WRF_d03', 'CanESM2', 'CanRCM4')
+
+# D03 exclusion: 46005's nearest D03 cell is 1.156 deg away (off-domain
+# artifact at the domain edge); all other buoys are within 0.018 deg.
+D03_EXCLUDE = {'46005': 'off D03 domain (nearest cell 1.16 deg away)'}
 BASE = os.path.dirname(os.path.abspath(__file__))
 
 # D01 agency map (which t_d01_<AGENCY>_buoy_<ID>.nc file each buoy uses)
@@ -134,15 +142,19 @@ def nc_tas_daily(path, var='tas'):
     return s[(s.index >= pd.Timestamp(1986, 1, 1)) & (s.index < pd.Timestamp(2006, 1, 1))]
 
 
-def wrf_d01_t2(buoy_id):
-    """Locate the D01 T2 file whose EMBEDDED coords match truth (±0.05 deg).
-    Returns (path, note) or (None, reason).  The 2026-09-23 re-extraction
-    should make the by-name file correct, but we verify by coords anyway."""
+def wrf_nest_t2(buoy_id, dom, tol=0.05):
+    """Locate the T2 file for nest `dom` (d01/d02/d03) whose EMBEDDED coords
+    match the buoy truth within `tol`.  Returns (path, note) or (None, reason).
+    D01 files are named t_d01_<AGENCY>_buoy_<ID>.nc; D02/D03 files are named
+    t_<dom>_st<ID>.nc.  Matching is by embedded coords (not just filename)
+    so a rotated/misnamed file can never enter the analysis silently."""
     tlon, tlat = TRUTH[buoy_id]
     d0 = os.path.join(BASE, 'data/wrf_stations')
+    pat = (r't_d01_(ECCC|NOAA)_buoy_(\w+)\.nc$' if dom == 'd01'
+           else r't_%s_st(\w+)\.nc$' % dom)
     cands = []
     for f in os.listdir(d0):
-        m = re.match(r't_d01_(ECCC|NOAA)_buoy_(\w+)\.nc$', f)
+        m = re.match(pat, f)
         if not m:
             continue
         fp = os.path.join(d0, f)
@@ -150,11 +162,11 @@ def wrf_d01_t2(buoy_id):
         la = float(d.variables['lat'][:].ravel()[0])
         lo = float(d.variables['lon'][:].ravel()[0])
         d.close()
-        if abs(la - tlat) <= 0.05 and abs(lo - tlon) <= 0.05:
+        if abs(la - tlat) <= tol and abs(lo - tlon) <= tol:
             cands.append((f, la, lo))
     if not cands:
-        return None, 'no d01 file at true location'
-    own = [c for c in cands if c[0].endswith('_' + buoy_id + '.nc')]
+        return None, 'no %s file at true location' % dom
+    own = [c for c in cands if c[0].endswith(buoy_id + '.nc')]
     if len(own):
         return os.path.join(d0, own[0][0]), 'embedded-coord match'
     pick = cands[0][0]
@@ -162,6 +174,20 @@ def wrf_d01_t2(buoy_id):
     return os.path.join(d0, pick), (
         'embedded-coord match (rotated filename: %s holds %s; others: %s)'
         % (pick, buoy_id, others))
+
+
+def wrf_d01_t2(buoy_id):
+    return wrf_nest_t2(buoy_id, 'd01')
+
+
+def wrf_d02_t2(buoy_id):
+    return wrf_nest_t2(buoy_id, 'd02')
+
+
+def wrf_d03_t2(buoy_id):
+    # 3 km cell: use a looser tol so we don't reject a file that sits on the
+    # right cell but whose centre is ~0.008 deg (half a 3 km cell) from truth.
+    return wrf_nest_t2(buoy_id, 'd03', tol=0.2)
 
 
 # ---------------------------------------------------------------------------
@@ -292,6 +318,19 @@ def main():
         else:
             series['WRF_d01'] = load_t2_cached(path)
             flags['WRF_d01'] = note
+        # WRF D02 / D03 (hourly T2, K) — matched by embedded coords
+        for model, loader in (('WRF_d02', wrf_d02_t2), ('WRF_d03', wrf_d03_t2)):
+            if model == 'WRF_d03' and bid in D03_EXCLUDE:
+                series[model] = pd.Series(dtype=float)
+                flags[model] = D03_EXCLUDE[bid]
+                continue
+            path, note = loader(bid)
+            if path is None:
+                series[model] = pd.Series(dtype=float)
+                flags[model] = note
+            else:
+                series[model] = load_t2_cached(path)
+                flags[model] = note
         # CanESM2 + CanRCM4 (daily tas, K)
         for model, sub in (('CanESM2', 'canesm2_raw_buoys'),
                            ('CanRCM4', 'canrcm4_buoys')):
@@ -367,7 +406,7 @@ def main():
         pickle.dump(dict(tab=tab, pool=pool, min_years=args.min_years,
                          truth=TRUTH), fh)
 
-    print('\nBuoy tas (near-surface air T) bias — 3 model columns — '
+    print('\nBuoy tas (near-surface air T) bias — 5 model columns — '
           'obs 1986-2005, K — year gate: >=%d/4 seasons\n' % args.year_gate)
     print('=== SURVIVING YEARS (headline; obs cascade, 90%% gate) ===')
     o = surv_obs_df.reset_index()

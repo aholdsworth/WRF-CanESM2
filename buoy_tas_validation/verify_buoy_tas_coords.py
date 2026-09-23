@@ -5,6 +5,8 @@ Reads truth coords from station_cdo/buoys/buoy_descs.csv and checks every
 per-buoy model file's embedded 1-point coordinate:
 
   * data/wrf_stations/t_d01_{ECCC,NOAA}_buoy_<ID>.nc      (var T2)
+  * data/wrf_stations/t_d02_st<ID>.nc                     (var T2)
+  * data/wrf_stations/t_d03_st<ID>.nc                     (var T2)
   * data/cdo_extractions/canesm2_raw_buoys/tas_buoy_<ID>.nc (var tas)
   * data/cdo_extractions/canrcm4_buoys/tas_buoy_<ID>.nc   (var tas)
 
@@ -19,9 +21,11 @@ import argparse, math, os, re, sys
 import netCDF4 as nc
 
 PATTERNS = [
-    (r"t_d01_(ECCC|NOAA)_buoy_(\w+)\.nc$", "data/wrf_stations"),
-    (r"tas_buoy_(\w+)\.nc$", "data/cdo_extractions/canesm2_raw_buoys"),
-    (r"tas_buoy_(\w+)\.nc$", "data/cdo_extractions/canrcm4_buoys"),
+    (r"t_d01_(ECCC|NOAA)_buoy_(\w+)\.nc$", "data/wrf_stations", 0.05),
+    (r"t_d02_st(\w+)\.nc$",                "data/wrf_stations", 0.05),
+    (r"t_d03_st(\w+)\.nc$",                "data/wrf_stations", 0.20),
+    (r"tas_buoy_(\w+)\.nc$", "data/cdo_extractions/canesm2_raw_buoys", 0.05),
+    (r"tas_buoy_(\w+)\.nc$", "data/cdo_extractions/canrcm4_buoys", 0.05),
 ]
 
 def dmatch(l1, la1, l2, la2):
@@ -42,13 +46,15 @@ def load_truth(path):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", default=os.getcwd())
-    ap.add_argument("--tol", type=float, default=0.05, help="max allowed offset, deg")
+    ap.add_argument("--tol", type=float, default=0.05,
+                    help="max allowed offset for d01/d02/GCM files, deg "
+                         "(d03 uses a fixed 0.20 deg tolerance for the 3 km cell)")
     args = ap.parse_args()
     root = args.root
     truth = load_truth(os.path.join(root, "station_cdo/buoys/buoy_descs.csv"))
     bad = 0
     checked = 0
-    for pat, d in PATTERNS:
+    for pat, d, tol in PATTERNS:
         d = os.path.join(root, d)
         if not os.path.isdir(d):
             print("  (dir missing, skip) %s" % d)
@@ -69,8 +75,8 @@ def main():
             tlon, tlat = truth[bid]
             ddeg = dmatch(lon, lat, tlon, tlat)
             checked += 1
-            status = "OK" if ddeg <= args.tol else "MISMATCH"
-            if ddeg > args.tol:
+            status = "OK" if ddeg <= tol else "MISMATCH"
+            if ddeg > tol:
                 bad += 1
             print("  %-72s (%9.4f,%10.4f) truth=(%9.4f,%10.4f) d=%.4f  %s"
                   % (os.path.join(os.path.basename(d), f), lat, lon, tlat, tlon, ddeg, status))

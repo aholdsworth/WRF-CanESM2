@@ -42,15 +42,32 @@ Per-buoy 1×1-point series at the buoy's true coordinates (verified to
 0.0000° against the `.mat`-header truth, `station_cdo/buoys/buoy_descs.csv`):
 
 - **WRF D01 (75 km):** hourly `T2` (K), re-extracted 2026-09-23 from
-  `t_d01_hourly.nc` (99×99) with 1-point nearest-cell SCRIP weights; the
-  original PFM pull had rotated ECCC filenames and was replaced
-  (`extract_buoy_t_d01.sh`).
+  `t_d01_hourly.nc` (99×99) with 1-point nearest-cell SCRIP weights.
+- **WRF D02 (15 km):** hourly `T2` (K), re-extracted 2026-09-23 from
+  `t_d02_hourly.nc` (200×200), 1-point nearest-cell SCRIP weights.
+- **WRF D03 (3 km):** hourly `T2` (K), re-extracted 2026-09-23 from
+  `t_d03.nc` (300×300), 1-point nearest-cell SCRIP weights.
 - **CanESM2 (~100 km):** daily `tas` (K), 1850–2005, sliced to 1986–2005.
 - **CanRCM4 (~25 km):** daily `tas` (K), 1986–2005.
 
-D01 placement caveat: at ~75 km the buoy can lie up to ~0.35° from the
-nearest cell centre, so the D01 series carries extra sub-grid placement
-uncertainty.
+**Rotated-file fix.** The original PFM per-station WRF files (Sept 2023)
+were cross-assigned for six ECCC buoys (a file named for one buoy held the
+series of another). All three WRF columns were therefore re-extracted on
+2026-09-23 from regenerated, coordinate-verified station descriptors and
+SCRIP weights (`extract_buoy_t_parallel.sh`), and the analysis matches each
+model file to a buoy by its embedded 1-point coordinates rather than its
+filename, so a rotated/misnamed file cannot enter the analysis silently.
+The rotated originals are preserved under
+`data/wrf_stations/rotated_backup_20260923/`.
+
+**D03 placement caveat (46005).** At ~3 km the D03 grid is fine, but the
+buoy 46005 sits 1.156° from its nearest D03 cell centre, at the western
+domain edge — an off-domain nearest-cell artifact rather than a real D03
+sample. It is therefore excluded from the D03 column (all other buoys are
+within 0.018° of their nearest D03 cell); the D03 pooled row covers the
+remaining 8 core buoys. At 75 km (D01) the buoy can lie up to ~0.35° from
+the nearest cell centre, so the D01 series carries extra sub-grid placement
+uncertainty; D02/D03 placement uncertainty is negligible.
 
 ## 3. Missing-data cascade (90 % gate at every level)
 
@@ -124,6 +141,6 @@ and pooled MAE/RMSE = mean of the per-buoy MAE/RMSE.
 1. Quantity: near-surface air temperature (K) instead of 10 m wind speed.
 2. No height scaling (momentum-only correction).
 3. Missingness: NaN (no exact-zero convention).
-4. Model columns: D01 + CanESM2 + CanRCM4 only (D02/D03 buoy `t`
-   extractions pending).
+4. Model columns: WRF D01 + D02 + D03 + CanESM2 + CanRCM4 (five columns;
+   all WRF columns re-extracted 2026-09-23 with verified coordinates).
 5. Core set: 9 buoys (temperature) vs 6 (wind).
