@@ -416,8 +416,8 @@ def main():
             s = series[model]
             if s.empty:
                 rows.append(dict(buoy=bid, model=model, n_years=0, obs=np.nan,
-                                 model_mean=np.nan, bias_pct=np.nan, mae=np.nan,
-                                 rmse=np.nan, flag=flags[model]))
+                                 model_mean=np.nan, bias=np.nan, bias_pct=np.nan,
+                                 mae=np.nan, rmse=np.nan, flag=flags[model]))
                 surv.append(dict(buoy=bid, model=model, n_years=0, years='',
                                  flag=flags[model]))
                 continue
@@ -435,6 +435,7 @@ def main():
                 dm = (mod_a - obs_a)[ok]
                 r = dict(buoy=bid, model=model, n_years=n,
                          obs=float(obs_a[ok].mean()), model_mean=float(mod_a[ok].mean()),
+                         bias=float(dm.mean()),
                          bias_pct=float(100.0 * dm.mean() / obs_a[ok].mean()),
                          mae=float(dm.abs().mean()),
                          rmse=float(np.sqrt((dm ** 2).mean())), flag=flags[model])
@@ -442,7 +443,8 @@ def main():
                 r = dict(buoy=bid, model=model, n_years=n,
                          obs=float(obs_a[ok].mean()) if n else np.nan,
                          model_mean=float(mod_a[ok].mean()) if n else np.nan,
-                         bias_pct=np.nan, mae=np.nan, rmse=np.nan, flag=flags[model])
+                         bias=np.nan, bias_pct=np.nan, mae=np.nan, rmse=np.nan,
+                         flag=flags[model])
             rows.append(r)
             surv.append(dict(buoy=bid, model=model, n_years=n,
                              years=''.join(str(y)[-2:] for y in surv_years) if n else '',
@@ -469,7 +471,7 @@ def main():
         sub = tab.loc[idx]
         obs_pm, mod_pm = sub['obs'].mean(), sub['model_mean'].mean()
         pool_rows.append(dict(model=model, n_buoys=len(sub), obs=obs_pm,
-                              model_mean=mod_pm,
+                              model_mean=mod_pm, bias=mod_pm - obs_pm,
                               bias_pct=100.0 * (mod_pm - obs_pm) / obs_pm,
                               mae=sub['mae'].mean(), rmse=sub['rmse'].mean()))
     pool = pd.DataFrame(pool_rows).set_index('model') if pool_rows else pd.DataFrame()

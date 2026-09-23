@@ -73,6 +73,7 @@ truth buoy coordinates and CDO single-point descriptors (committed here).
 `buoy_wind_bias.py` writes (relative to this folder):
 
 - `files/buoy_wind_bias[_<tag>].csv` — per-buoy × model metrics
+  (includes both `bias` in m s⁻¹ and `bias_pct`)
 - `files/buoy_wind_bias_pooled[_<tag>].csv` — pooled core row
 - `pickles/buoy_wind_tables[_<tag>].pkl` — annual/seasonal tables
 
