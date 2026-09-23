@@ -15,9 +15,9 @@
 .~*
 _CONTEXT_ADD_CODE.md
 
-# buoy_wind_validation: result tables + truth coords are package inputs, not
+# buoy_validation: result tables + truth coords are package inputs, not
 # raw model/obs data — track them
-!buoy_wind_validation/results/*.csv
-!buoy_wind_validation/station_cdo/buoys/buoy_descs.csv
+!buoy_validation/results/*.csv
+!buoy_validation/station_cdo/buoys/buoy_descs.csv
 # elevation_bias: result tables are package outputs, not raw model/obs data
 !elevation_bias/results/*.csv

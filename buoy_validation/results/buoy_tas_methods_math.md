@@ -1,7 +1,7 @@
 # Buoy `tas` validation — mathematical description of methods
 
 Companion to `buoy_tas_results_for_report.md`. Mirrors the wind analysis
-(`../buoy_wind_validation/results/buoy_wind_methods_math.md`) so the two
+(`buoy_wind_methods_math.md`) so the two
 comparisons are directly comparable; differences are noted.
 
 ## 1. Observed near-surface air temperature

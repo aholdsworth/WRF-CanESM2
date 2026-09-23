@@ -5,82 +5,63 @@
 apples-to-apples year pairing, skill metrics, and pooling — each given in
 plain text and LaTeX).
 
-Source: `buoy_tas_bias.py --year-gate 3` (relaxed) →
+**Source:** `buoy_tas_bias.py --year-gate 3` (relaxed) →
 `files/buoy_tas_bias{,_pooled}.csv` (regenerated copies in `results/`).
-Five model columns: WRF D01 (outer nest, ~75 km, hourly T2), WRF D02
-(15 km, hourly T2), WRF D03 (3 km, hourly T2), CanESM2 (~100 km, daily
-`tas`, the parent GCM and coarsest column) and CanRCM4 (~25 km, daily
-`tas`). All WRF columns were re-extracted 2026-09-23 with embedded
-coordinates verified against the buoy truth; the original PFM pull had
-rotated ECCC filenames (see the rotated-file note below).
 
-## 1. Description (methods + results)
+Five model columns are compared: the three WRF nested domains — D01 (outer
+nest, ~75 km), D02 (middle nest, ~15 km), D03 (inner nest, ~3 km), all
+hourly `T2` — plus CanESM2 (~100 km, daily `tas`; the parent GCM and the
+coarsest column) and CanRCM4 (~25 km, daily `tas`). All WRF columns were
+re-extracted 2026-09-23 with embedded coordinates verified against the
+buoy truth; the original PFM pull had rotated ECCC filenames (see §4).
+
+## 1. Methods (summary)
 
 Fourteen North Pacific / BC-coast buoys with near-surface air-temperature
-records (1986–2005) were used to validate near-surface air temperature from
-five model columns: the three WRF nested domains D01 (outer nest, ~75 km),
-D02 (middle nest, ~15 km) and D03 (inner nest, ~3 km), plus CanESM2 at its
-native ~100 km resolution (the parent GCM, the coarsest column) and CanRCM4
-(~25 km, a comparable downscaling of CanESM2). The observation is the buoy
-met-package air-temperature channel ("Temperature:Air", degrees C) from the
-NOAA/MSC-OS `MB_<ID>_HM.mat` files, sampled at ~15-min cadence; it is
+records (1986–2005) are used to validate near-surface air temperature from
+the five model columns above. The observation is the buoy met-package
+air-temperature channel ("Temperature:Air", degrees C) from the
+NOAA/MSC-OS `MB_<ID>_HM.mat` files, sampled at ~15-min cadence. It is
 converted to kelvin (+273.15) and reduced to hourly (mean of the hour's
 samples), daily and annual values with the same 90 % missing-data cascade
-used for the wind analysis (a day is kept if ≥90 % of its hours are present
-and no intra-day gap exceeds 3 h; a month if ≥90 % of its days survive; a
-season if ≥2 of its 3 complete months survive; a year if ≥3 of its 4
-seasons pass), and model annuals are computed on exactly the same surviving
-years as the observations (apples-to-apples). The buoy air-temperature
-sensor sits in the met-package above the sea surface (the package wind
-stresses are referenced to 4.2 m), while the model fields are 2 m (WRF T2)
-or near-surface (CanESM2/CanRCM4 `tas`); no height scaling is applied
-(log-profile scaling is a momentum correction and does not transfer to a
-conserved scalar). Per buoy and model we report the period means, raw bias
-in K, bias % = 100·(model−obs)/obs, MAE and RMSE on the shared-year annual
-values. The pooled headline averages the per-buoy statistics over the core
-set of buoys with ≥8 shared surviving years: 46005, 46041, 46050, 46131,
-46132, 46146, 46204, 46206 and 46207 (nine buoys — three more than the wind
-core, because air temperature has far fewer gaps than the wind vector).
-For D03 the core is the same nine buoys minus 46005, whose nearest 3 km
-D03 cell lies 1.16° away at the domain edge (an off-domain nearest-cell
-artifact, not a real D03 sample), so the D03 pooled row covers 8 buoys.
+used for the wind analysis (a day is kept if ≥90 % of its hours are
+present and no intra-day gap exceeds 3 h; a month if ≥90 % of its days
+survive; a season if ≥2 of its 3 complete months survive; a year if ≥3 of
+its 4 seasons pass). Model annuals are computed on exactly the same
+surviving years as the observations (apples-to-apples). The buoy
+air-temperature sensor sits in the met-package above the sea surface (the
+package wind stresses are referenced to 4.2 m), while the model fields are
+2 m (WRF `T2`) or near-surface (CanESM2/CanRCM4 `tas`); no height scaling
+is applied (log-profile scaling is a momentum correction and does not
+transfer to a conserved scalar). Per buoy and model we report the period
+means, raw bias in K, bias % = 100·(model−obs)/obs, MAE and RMSE on the
+shared-year annual values. The pooled headline averages the per-buoy
+statistics over the core set of buoys with ≥8 shared surviving years:
+46005, 46041, 46050, 46131, 46132, 46146, 46204, 46206 and 46207 (nine
+buoys — three more than the wind core, because air temperature has far
+fewer gaps than the wind vector). For D03 the core drops 46005 (nearest
+3 km cell 1.16° away at the domain edge — see §4), so the D03 pooled row
+covers 8 buoys.
 
-Pooled results (K): WRF D01 bias −1.60 K (−0.56 %; MAE 1.67, RMSE 1.81 K),
-WRF D02 −0.88 K (−0.31 %; 1.02, 1.18), WRF D03 −0.89 K (−0.32 %; 1.04,
-1.18; 8 buoys), CanESM2 −1.31 K (−0.46 %; 1.48, 1.65) and CanRCM4 −0.68 K
-(−0.24 %; 0.94, 1.12). All five columns are slightly cold against the
-buoys, and the cold bias weakens monotonically from the coarsest column
-(D01 / CanESM2) toward the finer nested columns: D02 and D03 roughly
-halve the D01 bias (≈ −0.9 K), while CanRCM4 is closest to neutral with
-the smallest error magnitude. The per-buoy pattern is not uniform: the two
-buoys in the Queen Charlotte / Hecate Strait region (46131, 46146) show a
-large −3.4 to −3.6 K (≈ −1.2 %) bias for both D01 and CanESM2 that largely
-disappears in the nested columns — D02 reduces it to −0.3 to −0.5 K and
-D03 to −0.1 to −0.4 K — and is −0.9 to −1.6 K for CanRCM4, whereas the
-west-coast buoys (46005, 46041, 46204, 46207) show the smallest biases.
-Note on D01 placement: the 75 km D01 cells are ~0.7° across, so buoy
-positions fall up to ~0.35° from the nearest cell centre; the D01 column
-therefore carries an extra sub-grid placement uncertainty not present at
-finer resolution (D02/D03 cells are 15 km / 3 km, so their placement
-uncertainty is negligible). A cross-check against the independent
+## 2. Results
+
+All five columns are slightly cold against the buoys, and the cold bias
+weakens monotonically from the coarsest columns toward the finer nested
+columns: D02 and D03 roughly halve the D01 bias (≈ −0.9 K), while CanRCM4
+is closest to neutral with the smallest error magnitude. The per-buoy
+pattern is not uniform. The two buoys in the Queen Charlotte / Hecate
+Strait region (46131, 46146) show a large −3.4 to −3.6 K (≈ −1.2 %) bias
+for both D01 and CanESM2 that largely disappears in the nested columns —
+D02 reduces it to −0.3 to −0.5 K and D03 to −0.1 to −0.4 K — and is −0.9
+to −1.6 K for CanRCM4; the west-coast buoys (46005, 46041, 46204, 46207)
+show the smallest biases. A cross-check against the independent
 land-station pipeline (120–121 stations) shows the same sign and ordering:
 mean temperature bias −3.07 K (D01), −2.04 K (D02), −1.03 K (D03),
 −1.94 K (CanESM2), −3.60 K (CanRCM4) — i.e. the coarse outer column is
 systematically cold over land as well, and the bias weakens toward the
 finer nests.
 
-**Rotated-file note.** The original PFM per-station WRF files (Sept 2023)
-were cross-assigned for six ECCC buoys (the file named for one buoy held
-the time series of another). They were detected by comparing each file's
-embedded 1-point coordinates against the buoy truth
-(`station_cdo/buoys/buoy_descs.csv`) and re-extracted on 2026-09-23 with
-regenerated, coordinate-verified station descriptors and SCRIP weights
-(`extract_buoy_t_parallel.sh`). The rotated originals are preserved under
-`data/wrf_stations/rotated_backup_20260923/`. The analysis matches every
-model file to a buoy by embedded coordinates (not filename), so a
-rotated/misnamed file cannot enter the analysis silently.
-
-## 2. Table — pooled skill summary (core set, ≥8 shared years)
+## 3. Table — pooled skill summary (core set, ≥8 shared years)
 
 | Model | n buoys | Obs mean (K) | Model mean (K) | Bias (K) | Bias (%) | MAE (K) | RMSE (K) |
 |---|---|---|---|---|---|---|---|
@@ -91,11 +72,11 @@ rotated/misnamed file cannot enter the analysis silently.
 | CanRCM4 (~25 km)  | 9 | 283.89 | 283.22 | −0.68 | −0.24 | 0.94 | 1.12 |
 
 *Rows ordered from coarsest to finest. The D03 pooled row excludes 46005
-(its nearest D03 cell is 1.16° away — off-domain artifact), so it covers
-8 buoys; the D03 "Obs mean" is the mean over those same 8 buoys. All other
-rows cover the full 9-buoy core.*
+(nearest D03 cell 1.16° away — off-domain artifact), so it covers 8 buoys;
+its "Obs mean" is the mean over those same 8 buoys. All other rows cover
+the full 9-buoy core.*
 
-## 3. Table — per-buoy detail (core set; relaxed year gate: ≥3 of 4 seasons/yr)
+## 4. Table — per-buoy detail (core set; relaxed year gate: ≥3 of 4 seasons/yr)
 
 | Buoy | Model | yrs | Obs (K) | Model (K) | Bias (K) | Bias (%) | MAE (K) | RMSE (K) |
 |---|---|---|---|---|---|---|---|---|
@@ -145,7 +126,27 @@ rows cover the full 9-buoy core.*
 | 46207 | CanESM2  |  8 | 283.41 | 282.83 | −0.58 | −0.21 | 0.80 | 0.95 |
 | 46207 | CanRCM4  |  8 | 283.41 | 282.39 | −1.02 | −0.36 | 1.07 | 1.26 |
 
-*46005's WRF D03 row is "—" because its nearest D03 cell is 1.16° away at
-the domain edge (off-domain nearest-cell artifact); it is excluded from the
-D03 analysis. Non-core buoys (in the per-buoy CSV, not in the pool): 46029
-(7 obs years), 46134 (3), 46087/46088/46089 (1 each — deployed 2004–2005).*
+### Notes
+
+- **D03 — 46005 excluded.** 46005's nearest D03 cell is 1.16° away at the
+  western domain edge — an off-domain nearest-cell artifact, not a real
+  3 km sample (all other buoys are within 0.018° of their nearest D03
+  cell). It is therefore dropped from the D03 column; its row above is
+  "—" and the D03 pooled row covers 8 buoys.
+- **D01 sub-grid placement.** The 75 km D01 cells are ~0.7° across, so a
+  buoy position can fall up to ~0.35° from the nearest cell centre; the
+  D01 column carries an extra sub-grid placement uncertainty not present
+  at finer resolution (D02/D03 cells are 15 km / 3 km, so their placement
+  uncertainty is negligible).
+- **Rotated PFM files.** The original PFM per-station WRF files (Sept
+  2023) were cross-assigned for six ECCC buoys (a file named for one buoy
+  held the series of another). They were detected by comparing each
+  file's embedded 1-point coordinates against the buoy truth
+  (`station_cdo/buoys/buoy_descs.csv`) and re-extracted on 2026-09-23
+  from regenerated, coordinate-verified station descriptors and SCRIP
+  weights (`extract_buoy_t_parallel.sh`). The analysis matches every
+  model file to a buoy by embedded coordinates (not filename), so a
+  rotated/misnamed file cannot enter the analysis silently. The rotated
+  originals are preserved under `data/wrf_stations/rotated_backup_20260923/`.
+- **Non-core buoys** (in the per-buoy CSV, not in the pool): 46029 (7 obs
+  years), 46134 (3), 46087/46088/46089 (1 each — deployed 2004–2005).
