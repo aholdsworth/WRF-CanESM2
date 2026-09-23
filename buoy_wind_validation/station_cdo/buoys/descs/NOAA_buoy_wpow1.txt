@@ -1,0 +1,13 @@
+# CDO grid file
+# Station wpow1 (buoy) — regenerated 2026-09-22 from station_cdo/buoys/buoy_descs.csv
+#
+gridtype = curvilinear
+gridsize = 1
+xsize = 1
+ysize = 1
+#
+# Longitudes
+xvals = -122.436
+#
+# Latitude
+yvals = 47.662

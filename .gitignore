@@ -14,3 +14,8 @@
 **/.~*
 .~*
 _CONTEXT_ADD_CODE.md
+
+# buoy_wind_validation: result tables + truth coords are package inputs, not
+# raw model/obs data — track them
+!buoy_wind_validation/results/*.csv
+!buoy_wind_validation/station_cdo/buoys/buoy_descs.csv

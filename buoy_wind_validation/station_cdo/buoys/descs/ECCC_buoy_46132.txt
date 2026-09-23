@@ -1,0 +1,13 @@
+# CDO grid file
+# Station 46132 (buoy) — ECCC, regenerated from buoy_descs.csv
+#
+gridtype = curvilinear
+gridsize = 1
+xsize = 1
+ysize = 1
+#
+# Longitudes
+xvals = -127.93
+#
+# Latitude
+yvals = 49.74

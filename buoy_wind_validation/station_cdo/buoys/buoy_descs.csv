@@ -1,0 +1,30 @@
+# Corrected buoy station grid descriptions (2026-09-22).
+#
+# Source of coordinates: files/ECCC_buoys.csv + files/NOAA_buoys.csv
+# (canonical station inventory), cross-checked against the lat/lon actually
+# embedded in Eva's PFM per-station WRF d02/d03 files (t_d02_st<ID>.nc),
+# which agree with the CSVs to <1e-3 deg for all 12 buoys.
+#
+# DO NOT use the PFM ECCC_buoy_*.txt descs directly: of the 7 ECCC buoy descs,
+# only 46207 has its own correct coords; the other 6 contain a DIFFERENT
+# buoy's coordinates (rotated assignment, May-June 2024).  The NOAA_buoy_*.txt
+# descs are all correct.
+#
+# File naming: <AGENCY>_buoy_<ID>.txt  (same convention as PFM).
+agency,id,lon,lat
+ECCC,46131,-124.99,49.91
+ECCC,46132,-127.93,49.74
+ECCC,46134,-123.5,48.65
+ECCC,46146,-123.73,49.34
+ECCC,46204,-128.77,51.38
+ECCC,46206,-126.0,48.83
+ECCC,46207,-129.91,50.88
+NOAA,46005,-131.09,46.143
+NOAA,46029,-124.487,46.163
+NOAA,46041,-124.739,47.352
+NOAA,desw1,-124.485,47.675
+NOAA,wpow1,-122.436,47.662
+NOAA,46050,-124.514667,44.6775
+NOAA,46087,-124.726333,48.493
+NOAA,46088,-123.164667,48.333667
+NOAA,46089,-125.819167,45.893333

@@ -1,0 +1,13 @@
+# CDO grid file
+# Station 46005 (buoy) — NOAA, regenerated from buoy_descs.csv
+#
+gridtype = curvilinear
+gridsize = 1
+xsize = 1
+ysize = 1
+#
+# Longitudes
+xvals = -131.09
+#
+# Latitude
+yvals = 46.143
