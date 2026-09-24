@@ -122,12 +122,13 @@ truth buoy coordinates and CDO single-point descriptors (committed here).
 
 The bias scripts write (relative to this folder):
 
-- `files/buoy_{wind,tas}_bias[_<tag>].csv` — per-buoy × model metrics
+- `results/buoy_{wind,tas}_bias[_<tag>].csv` — per-buoy × model metrics
   (includes both raw `bias` and `bias_pct`)
-- `files/buoy_{wind,tas}_bias_pooled[_<tag>].csv` — pooled core rows
+- `results/buoy_{wind,tas}_bias_pooled[_<tag>].csv` — pooled rows (pinned
+  to the WRF D03 column, so the obs baseline is identical across models)
 - `pickles/buoy_wind_tables[_<tag>].pkl` — annual/seasonal tables (wind)
 
-The canonical (relaxed) results are copied to [`results/`](results/).
+The canonical (relaxed) results live in [`results/`](results/).
 
 ## Buoys
 

@@ -33,8 +33,8 @@ same metrics), with temperature substitutions:
     from the nearest cell centre (documented, same as wind D01).
 
 Outputs (per --tag suffix):
-  files/buoy_tas_bias<tag>.csv          (per-buoy x model)
-  files/buoy_tas_bias_pooled<tag>.csv   (pooled over the >= --min-years core)
+  results/buoy_tas_bias<tag>.csv       (per-buoy x model)
+  results/buoy_tas_bias_pooled<tag>.csv (pooled over the >= --min-years core)
   stdout: surviving-years report + main table + pooled row.
 
 Usage:  python buoy_tas_bias.py [--min-years 8] [--year-gate 3|4]
@@ -277,7 +277,7 @@ def main():
                     default='/gpfs/fs7/dfo/hpcmc/comda/fs2_comda/amh001/DATA/BuoyData')
     args = ap.parse_args()
 
-    os.makedirs(os.path.join(BASE, 'files'), exist_ok=True)
+    os.makedirs(os.path.join(BASE, 'results'), exist_ok=True)
     os.makedirs(os.path.join(BASE, 'pickles'), exist_ok=True)
 
     rows, surv, surv_obs = [], [], []
@@ -399,8 +399,8 @@ def main():
     pool = pd.DataFrame(pool_rows).set_index('model') if pool_rows else pd.DataFrame()
 
     tag = args.tag
-    tab.to_csv(os.path.join(BASE, 'files/buoy_tas_bias%s.csv' % tag))
-    pool.to_csv(os.path.join(BASE, 'files/buoy_tas_bias_pooled%s.csv' % tag))
+    tab.to_csv(os.path.join(BASE, 'results/buoy_tas_bias%s.csv' % tag))
+    pool.to_csv(os.path.join(BASE, 'results/buoy_tas_bias_pooled%s.csv' % tag))
     with open(os.path.join(BASE, 'pickles/buoy_tas_tables%s.pkl' % tag), 'wb') as fh:
         import pickle
         pickle.dump(dict(tab=tab, pool=pool, min_years=args.min_years,

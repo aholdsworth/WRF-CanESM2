@@ -45,8 +45,8 @@ Model sources (per-buoy 1x1 files):
 
 Outputs (per --tag suffix, e.g. --tag _strict for the locked 4/4 run):
   pickles/buoy_wind_tables<tag>.pkl   (per-buoy x model annual/seasonal tables)
-  files/buoy_wind_bias<tag>.csv       (main table)
-  files/buoy_wind_bias_pooled<tag>.csv
+  results/buoy_wind_bias<tag>.csv     (main table)
+  results/buoy_wind_bias_pooled<tag>.csv
   stdout: surviving-years report (headline), main table, pooled row.
 
 Usage:  python buoy_wind_bias.py [--min-years 15] [--year-gate 3|4]
@@ -337,7 +337,7 @@ def main():
     args = ap.parse_args()
 
     os.makedirs(os.path.join(BASE, 'pickles'), exist_ok=True)
-    os.makedirs(os.path.join(BASE, 'files'), exist_ok=True)
+    os.makedirs(os.path.join(BASE, 'results'), exist_ok=True)
 
     rows, surv, pk, surv_obs = [], [], {}, []
     d01_cache = {}  # basename -> hourly series (29 files, loaded once each... cache by path)
@@ -477,8 +477,8 @@ def main():
     pool = pd.DataFrame(pool_rows).set_index('model') if pool_rows else pd.DataFrame()
 
     tag = args.tag
-    tab.to_csv(os.path.join(BASE, 'files/buoy_wind_bias%s.csv' % tag))
-    pool.to_csv(os.path.join(BASE, 'files/buoy_wind_bias_pooled%s.csv' % tag))
+    tab.to_csv(os.path.join(BASE, 'results/buoy_wind_bias%s.csv' % tag))
+    pool.to_csv(os.path.join(BASE, 'results/buoy_wind_bias_pooled%s.csv' % tag))
     with open(os.path.join(BASE, 'pickles/buoy_wind_tables%s.pkl' % tag), 'wb') as fh:
         pickle.dump(dict(tab=tab, pool=pool, per_buoy=pk,
                          min_years=args.min_years, H5=float(H5), truth=TRUTH), fh)
@@ -502,7 +502,7 @@ def main():
           'shared surviving years — apples-to-apples headline) ===' % args.min_years)
     if len(pool):
         print(pool.to_string())
-    print('\nWrote files/buoy_wind_bias%s.csv, files/buoy_wind_bias_pooled%s.csv, '
+    print('\nWrote results/buoy_wind_bias%s.csv, results/buoy_wind_bias_pooled%s.csv, '
           'pickles/buoy_wind_tables%s.pkl' % (tag, tag, tag))
 
 
