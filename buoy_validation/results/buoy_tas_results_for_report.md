@@ -6,7 +6,7 @@ apples-to-apples year pairing, skill metrics, and pooling — each given in
 plain text and LaTeX).
 
 **Source:** `buoy_tas_bias.py --year-gate 3` (relaxed) →
-`files/buoy_tas_bias{,_pooled}.csv` (regenerated copies in `results/`).
+`buoy_tas_bias{,_pooled}.csv` (in this directory).
 
 Five model columns are compared: the three WRF nested domains — D01 (outer
 nest, ~75 km), D02 (middle nest, ~15 km), D03 (inner nest, ~3 km), all
@@ -36,12 +36,16 @@ is applied (log-profile scaling is a momentum correction and does not
 transfer to a conserved scalar). Per buoy and model we report the period
 means, raw bias in K, bias % = 100·(model−obs)/obs, MAE and RMSE on the
 shared-year annual values. The pooled headline averages the per-buoy
-statistics over the core set of buoys with ≥8 shared surviving years:
-46005, 46041, 46050, 46131, 46132, 46146, 46204, 46206 and 46207 (nine
-buoys — three more than the wind core, because air temperature has far
-fewer gaps than the wind vector). For D03 the core drops 46005 (nearest
-3 km cell 1.16° away at the domain edge — see §4), so the D03 pooled row
-covers 8 buoys.
+statistics over a single buoy set pinned to the WRF D03 column — the
+buoys that are (a) in the ≥8-shared-surviving-years core and (b) present in
+the D03 column: 46041, 46050, 46131, 46132, 46146, 46204, 46206 and 46207
+(eight buoys — one more than the wind core, because air temperature has far
+fewer gaps than the wind vector; 46005 drops out because its nearest 3 km
+cell is 1.16° away at the domain edge — see §4). Pinning the set to D03 makes
+the pooled observation baseline identical across all five model columns
+(previously 46005, dropped from D03 only, kept the D03 pooled obs over a
+different
+buoy set than the other four columns).
 
 ## 2. Results
 
@@ -61,20 +65,20 @@ mean temperature bias −3.07 K (D01), −2.04 K (D02), −1.03 K (D03),
 systematically cold over land as well, and the bias weakens toward the
 finer nests.
 
-## 3. Table — pooled skill summary (core set, ≥8 shared years)
+## 3. Table — pooled skill summary (8-buoy set, pinned to the D03 column)
 
 | Model | n buoys | Obs mean (K) | Model mean (K) | Bias (K) | Bias (%) | MAE (K) | RMSE (K) |
 |---|---|---|---|---|---|---|---|
-| CanESM2 (~100 km) | 9 | 283.89 | 282.58 | −1.31 | −0.46 | 1.48 | 1.65 |
-| WRF D01 (~75 km)  | 9 | 283.89 | 282.30 | −1.60 | −0.56 | 1.67 | 1.81 |
-| WRF D02 (~15 km)  | 9 | 283.89 | 283.01 | −0.88 | −0.31 | 1.02 | 1.18 |
+| CanESM2 (~100 km) | 8 | 283.81 | 282.37 | −1.44 | −0.51 | 1.55 | 1.72 |
+| WRF D01 (~75 km)  | 8 | 283.81 | 282.11 | −1.71 | −0.60 | 1.75 | 1.89 |
+| WRF D02 (~15 km)  | 8 | 283.81 | 282.90 | −0.91 | −0.32 | 1.03 | 1.19 |
 | WRF D03 (~3 km)   | 8 | 283.81 | 282.92 | −0.89 | −0.32 | 1.04 | 1.18 |
-| CanRCM4 (~25 km)  | 9 | 283.89 | 283.22 | −0.68 | −0.24 | 0.94 | 1.12 |
+| CanRCM4 (~25 km)  | 8 | 283.81 | 283.10 | −0.71 | −0.25 | 0.94 | 1.11 |
 
-*Rows ordered from coarsest to finest. The D03 pooled row excludes 46005
-(nearest D03 cell 1.16° away — off-domain artifact), so it covers 8 buoys;
-its "Obs mean" is the mean over those same 8 buoys. All other rows cover
-the full 9-buoy core.*
+*Rows ordered from coarsest to finest. Pooled set = the eight buoys present in
+the D03 column within the ≥8-year core (46005 excluded — nearest D03 cell
+1.16° away, off-domain artifact). Every column pools over this same eight-buoy
+set, so the Obs mean is 283.81 K for all five models.*
 
 ## 4. Table — per-buoy detail (core set; relaxed year gate: ≥3 of 4 seasons/yr)
 
@@ -132,7 +136,9 @@ the full 9-buoy core.*
   western domain edge — an off-domain nearest-cell artifact, not a real
   3 km sample (all other buoys are within 0.018° of their nearest D03
   cell). It is therefore dropped from the D03 column; its row above is
-  "—" and the D03 pooled row covers 8 buoys.
+  "—" and, because the pooled set is pinned to the D03 column, it is also
+  excluded from the pooled headline for all five model columns (so the pooled
+  Obs baseline is identical across columns).
 - **D01 sub-grid placement.** The 75 km D01 cells are ~0.7° across, so a
   buoy position can fall up to ~0.35° from the nearest cell centre; the
   D01 column carries an extra sub-grid placement uncertainty not present

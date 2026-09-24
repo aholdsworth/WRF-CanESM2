@@ -153,19 +153,24 @@ Metrics are reported only when `n ≥ 2` shared years exist.
 ## 5. Pooling (headline row)
 
 The **core set** is the subset of buoys with `n ≥ n_min = 8` shared surviving
-years: `{46005, 46041, 46131, 46146, 46204, 46206}` (D03 core is 5 buoys,
-since 46005 lies off the D03 nest domain). The pooled value for a column is
-the **unweighted mean of the per-buoy statistics** over the core set `C_m`
-for that column:
+years: `{46005, 46041, 46131, 46146, 46204, 46206}`. The pooled set is this
+core **pinned to the WRF D03 column** — i.e. the core ∩ the buoys present in
+the D03 column. Because 46005 lies off the D03 nest domain, it is dropped from
+the pinned set for **every** column, leaving the same five buoys
+`{46041, 46131, 46146, 46204, 46206}` in all five model columns. Pinning the
+set to D03 makes the pooled observation baseline identical across all five
+columns (6.00 m s⁻¹). The pooled value for a column is the
+**unweighted mean of the per-buoy statistics** over that single pinned set `C`
+(46005 excluded; the remaining buoys with `n ≥ 1` in that column):
 
 ```
-Bias%_m = (1/|C_m|) Σ_{j ∈ C_m} bias%_{j,m}   (equivalently 100·(X_m − O_m)/O_m
-              with O_m, X_m the core means of obs / model)
-MAE_m   = (1/|C_m|) Σ_{j ∈ C_m} MAE_{j,m}
-RMSE_m  = (1/|C_m|) Σ_{j ∈ C_m} RMSE_{j,m}
+Bias%_m = (1/|C|) Σ_{j ∈ C} bias%_{j,m}   (equivalently 100·(X_m − O_m)/O_m
+              with O_m, X_m the pinned-set means of obs / model)
+MAE_m   = (1/|C|) Σ_{j ∈ C} MAE_{j,m}
+RMSE_m  = (1/|C|) Σ_{j ∈ C} RMSE_{j,m}
 ```
 LaTeX:
-`$\widehat{\mathrm{Bias\%}}_m = \tfrac{1}{|C_m|}\sum_{j\in C_m}
+`$\widehat{\mathrm{Bias\%}}_m = \tfrac{1}{|C|}\sum_{j\in C}
 \mathrm{bias\%}_{j,m}$,
-$\widehat{\mathrm{MAE}}_m = \tfrac{1}{|C_m|}\sum_{j\in C_m}\mathrm{MAE}_{j,m}$,
-$\widehat{\mathrm{RMSE}}_m = \tfrac{1}{|C_m|}\sum_{j\in C_m}\mathrm{RMSE}_{j,m}$.`
+$\widehat{\mathrm{MAE}}_m = \tfrac{1}{|C|}\sum_{j\in C}\mathrm{MAE}_{j,m}$,
+$\widehat{\mathrm{RMSE}}_m = \tfrac{1}{|C|}\sum_{j\in C}\mathrm{RMSE}_{j,m}$.`

@@ -64,10 +64,12 @@ The rotated originals are preserved under
 buoy 46005 sits 1.156° from its nearest D03 cell centre, at the western
 domain edge — an off-domain nearest-cell artifact rather than a real D03
 sample. It is therefore excluded from the D03 column (all other buoys are
-within 0.018° of their nearest D03 cell); the D03 pooled row covers the
-remaining 8 core buoys. At 75 km (D01) the buoy can lie up to ~0.35° from
-the nearest cell centre, so the D01 series carries extra sub-grid placement
-uncertainty; D02/D03 placement uncertainty is negligible.
+within 0.018° of their nearest D03 cell); the D03 column therefore
+covers the remaining 8 core buoys. Because the pooled set is pinned to the
+D03 column (see §5), 46005 is excluded from the pooled headline for all
+five model columns as well. At 75 km (D01) the buoy can lie up to ~0.35°
+from the nearest cell centre, so the D01 series carries extra sub-grid
+placement uncertainty; D02/D03 placement uncertainty is negligible.
 
 ## 3. Missing-data cascade (90 % gate at every level)
 
@@ -126,8 +128,14 @@ computed for $n \ge 2$.
 The core set is the buoys with $n \ge 8$ shared surviving years (for
 temperature this is 9 buoys: 46005, 46041, 46050, 46131, 46132, 46146,
 46204, 46206, 46207 — temperature gaps are much rarer than wind-vector
-gaps, so three more buoys qualify than for wind). The pooled row for model
-$m$ is the mean over core buoys $b$:
+gaps, so three more buoys qualify than for wind). The pooled set is this
+core **pinned to the WRF D03 column** — the core ∩ the buoys present in
+the D03 column. 46005’s nearest D03 cell lies 1.16° away (off-domain
+artifact), so it is dropped from the pinned set for **every** column,
+leaving the same eight buoys (46041, 46050, 46131, 46132, 46146, 46204,
+46206, 46207) in all five model columns, with an identical pooled
+observation baseline (283.81 K). The pooled row for model $m$ is the mean
+over that pinned set of buoys $b$ (each with $n \ge 1$ in the column):
 
 $$ \bar{x}^{o}_{\text{pool}} = \frac{1}{B}\sum_{b}\bar{x}^{o}_{b},\qquad
 \bar{x}^{m}_{\text{pool}} = \frac{1}{B}\sum_{b}\bar{x}^{m}_{b}, $$
@@ -143,4 +151,6 @@ and pooled MAE/RMSE = mean of the per-buoy MAE/RMSE.
 3. Missingness: NaN (no exact-zero convention).
 4. Model columns: WRF D01 + D02 + D03 + CanESM2 + CanRCM4 (five columns;
    all WRF columns re-extracted 2026-09-23 with verified coordinates).
-5. Core set: 9 buoys (temperature) vs 6 (wind).
+5. Core set: 9 buoys (temperature) vs 6 (wind); pooled set = core ∩ D03
+   column, so 46005 is pinned out for every column (8 buoys temperature,
+   5 buoys wind) with an identical obs baseline across all five models.

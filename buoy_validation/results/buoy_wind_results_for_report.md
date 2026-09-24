@@ -1,11 +1,11 @@
 # Buoy wind-speed validation — results for report (2026-09-23)
 
 **Mathematical description of methods:** see
-`files/buoy_wind_methods_math.md` (height scaling, 90 % missing-data
+`buoy_wind_methods_math.md` (in this directory; height scaling, 90 % missing-data
 cascade, bilinear extraction, skill metrics, and pooling — each given in
 plain text and LaTeX).
 
-Source: `buoy_wind_bias.py --year-gate 3` (relaxed) → `files/buoy_wind_bias{,_pooled}.csv`.
+Source: `buoy_wind_bias.py --year-gate 3` (relaxed) → `buoy_wind_bias{,_pooled}.csv` (in this directory).
 All five model columns now use consistently bilinear-extracted 10 m wind speed;
 the WRF D01 column was re-extracted on 2026-09-23 (see DATA_INVENTORY.md M12)
 after a transposed-grid bug in the first D01 weight generator was found and
@@ -28,37 +28,41 @@ month if ≤10 % of its days survive; a year if ≥3 of its 4 seasons pass), and
 model annuals are computed on exactly the same surviving years as the
 observations (apples-to-apples). Per buoy and model we report the period
 means, bias % = 100·(model−obs)/obs, MAE and RMSE. The pooled headline
-averages the per-buoy statistics over the core set of buoys with ≥8 shared
-surviving years: 46005, 46041, 46131, 46146, 46204 and 46206.
+averages the per-buoy statistics over a single buoy set pinned to the WRF D03
+column — the buoys that are (a) in the ≥8-shared-surviving-years core and
+(b) present in the D03 column: 46041, 46131, 46146, 46204 and 46206. Pinning
+the set to D03 makes the pooled observation baseline identical across all five
+model columns (previously 46005, which is off the D03 nest domain and dropped
+from D03 only, kept the D03 pooled obs over a different buoy set than the other
+four columns).
 
-Pooled results (6-buoy core): WRF D01 bias −10.8 % (−0.67 m s⁻¹; MAE 1.35,
-RMSE 1.45 m s⁻¹), WRF D02 +5.0 % (+0.31 m s⁻¹; 0.69, 0.82), WRF D03 +9.0 %
-(+0.54 m s⁻¹; 0.66, 0.78), CanESM2 −1.2 % (−0.07 m s⁻¹; 0.96, 1.05) and
-CanRCM4 +16.2 % (+1.01 m s⁻¹; 1.11, 1.22). The mid-resolution WRF D02
-shows the smallest absolute error of the five columns, and the 3 km WRF D03
-the lowest MAE/RMSE; the coarsest column (CanESM2, ~100 km) is the most
-accurate in mean bias (−1.2 %, −0.07 m s⁻¹) but with larger error magnitude
-than the WRF downscalings; CanRCM4 carries a large +16 % (+1.01 m s⁻¹)
-wind-speed bias. The D03 pooled
-obs mean is 6.00 m s⁻¹ rather than 6.25 because buoy 46005 sits off the D03
-nest domain and is dropped from that column only. Note on D01 placement: the
+Pooled results (5-buoy set, pinned to the D03 column): WRF D01 bias
+−14.8 % (−0.89 m s⁻¹; MAE 1.51, RMSE 1.60 m s⁻¹), WRF D02 +4.6 %
+(+0.28 m s⁻¹; 0.71, 0.84), WRF D03 +9.0 % (+0.54 m s⁻¹; 0.66, 0.78),
+CanESM2 −7.1 % (−0.43 m s⁻¹; 0.81, 0.90) and CanRCM4 +16.6 %
+(+1.00 m s⁻¹; 1.11, 1.23). All five columns pool over the same five buoys,
+so the pooled observation baseline is 6.00 m s⁻¹ for every column. The
+mid-resolution WRF D02 shows the smallest absolute error of the five columns,
+and the 3 km WRF D03 the lowest MAE/RMSE; CanRCM4 carries a large +17 %
+(+1.00 m s⁻¹) wind-speed bias. Note on D01 placement: the
 75 km D01 cells are ~0.7° across, so buoy positions fall up to ~0.35° from
 the nearest cell centre; the D01 column therefore carries an extra sub-grid
 placement uncertainty not present in D02/D03 (where buoy positions fall
 well inside a single cell).
 
-## 2. Table — pooled skill summary (6-buoy core, ≥8 shared years)
+## 2. Table — pooled skill summary (5-buoy set, pinned to the D03 column)
 
 | Model | n buoys | Obs mean (m/s) | Model mean (m/s) | Bias (m/s) | Bias (%) | MAE (m/s) | RMSE (m/s) |
 |---|---|---|---|---|---|---|---|
-| WRF D01 (~75 km)  | 6 | 6.25 | 5.58 | −0.67 | −10.8 | 1.35 | 1.45 |
-| WRF D02 (~15 km)  | 6 | 6.25 | 6.56 | +0.31 |  +5.0 | 0.69 | 0.82 |
+| WRF D01 (~75 km)  | 5 | 6.00 | 5.12 | −0.89 | −14.8 | 1.51 | 1.60 |
+| WRF D02 (~15 km)  | 5 | 6.00 | 6.28 | +0.28 |  +4.6 | 0.71 | 0.84 |
 | WRF D03 (~3 km)   | 5 | 6.00 | 6.54 | +0.54 |  +9.0 | 0.66 | 0.78 |
-| CanESM2 (~100 km) | 6 | 6.25 | 6.18 | −0.07 |  −1.2 | 0.96 | 1.05 |
-| CanRCM4 (~25 km)  | 6 | 6.25 | 7.26 | +1.01 | +16.2 | 1.11 | 1.22 |
+| CanESM2 (~100 km) | 5 | 6.00 | 5.57 | −0.43 |  −7.1 | 0.81 | 0.90 |
+| CanRCM4 (~25 km)  | 5 | 6.00 | 7.00 | +1.00 | +16.6 | 1.11 | 1.23 |
 
-*WRF D03 core is 5 buoys (46005 excluded — off the D03 nest domain); its obs
-mean is therefore over the 5 in-domain buoys.*
+*Pooled set = the five buoys present in the D03 column within the ≥8-year core
+(46005 excluded — off the D03 nest domain). Every column pools over this same
+five-buoy set, so the Obs mean is 6.00 m s⁻¹ for all five models.*
 
 ## 3. Table — per-buoy detail (relaxed year gate: ≥3 of 4 seasons/yr)
 
