@@ -21,3 +21,5 @@ _CONTEXT_ADD_CODE.md
 !buoy_validation/station_cdo/buoys/buoy_descs.csv
 # elevation_bias: result tables are package outputs, not raw model/obs data
 !elevation_bias/results/*.csv
+# extremes_validation: result tables are package outputs, not raw model/obs data
+!extremes_validation/results/*.csv
