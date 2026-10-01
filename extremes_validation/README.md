@@ -26,14 +26,15 @@ surviving years **>= 19 of 20 for both T and P**.
   as-is" convention of the `extremes/` bootstrap pipeline).
 - **Bias:** model percentile minus obs percentile (positive = model high).
 - **p95 skill (Sections 11-12):** RMSE = root-mean-square of the
-  per-station (model - obs) p95; R² = pooled squared Pearson correlation of
-  the *annual* p95 series (per-station p95 of each calendar year, pooled over
-  station x year over the shared surviving years) — the same "pooled R²"
-  convention as the repo's Taylor / skill-table pipeline.  The p95 Taylor
-  diagram (Figure 7) is drawn in the `taylor_3panel` style (correlation arc,
-  RMS contours, auto-scaled std axis, single-row legend): each point is a
-  dataset's pooled (station x year) p95 series (std, r vs pooled obs p95),
-  black star = obs reference (refstd over the union of shared station-years).
+  per-station (model - obs) p95 over the 110 stations; R² = squared Pearson
+  correlation of the *per-station whole-record* p95 values (one point per
+  station — a cross-station, i.e. climate-scale, comparison).  Year-to-year
+  variability of the extreme is deliberately not used: for a 20-yr record it
+  is mostly sampling noise, not climate signal.  The p95 Taylor diagram
+  (Figure 7) is drawn in the `taylor_3panel` style (correlation arc, RMS
+  contours, auto-scaled std axis, single-row legend): each point is a
+  dataset's per-station p95 vector (spatial std, r vs the obs per-station
+  p95 over the same 110 stations), black star = obs reference (spatial std).
 
 Model datasets: `D3` = WRF d03, `D15` = WRF d02, `D75` = WRF d01,
 `CanRCM4`, `CanESM2` (CDO per-station files under
@@ -107,27 +108,27 @@ Reading the pair of percentiles together:
 
 ## p95 skill (bias / RMSE / R²) — Section 11, Figure 6
 
-RMSE over the 110 stations; R² = pooled Pearson R² of the annual p95 series
-(station x year, shared surviving years).  Full table in
-`results/extreme_p95_skill.csv`.
+Cross-station: one point per station (whole-record p95 over the shared
+surviving years); bias/RMSE over the 110 stations; R² = Pearson R² of the
+per-station p95 values.  Full table in `results/extreme_p95_skill.csv`.
 
 | var | dataset | bias | RMSE | R² |
 |-----|---------|------|------|------|
-| T (C) | D3 | +0.20 | 2.23 | 0.69 |
-| T (C) | D15 | -0.73 | 2.19 | 0.60 |
-| T (C) | D75 | -1.69 | 2.57 | 0.50 |
-| T (C) | CanRCM4 | -2.02 | 3.02 | 0.48 |
-| T (C) | CanESM2 | +1.58 | 2.75 | 0.33 |
-| P (mm/d) | D3 | -1.76 | 4.59 | 0.73 |
-| P (mm/d) | D15 | +18.73 | 24.87 | 0.68 |
-| P (mm/d) | D75 | +24.69 | 31.04 | 0.56 |
-| P (mm/d) | CanRCM4 | +0.79 | 7.23 | 0.54 |
-| P (mm/d) | CanESM2 | -1.60 | 10.38 | 0.21 |
+| T (C) | D3 | +0.20 | 2.23 | 0.78 |
+| T (C) | D15 | -0.73 | 2.19 | 0.69 |
+| T (C) | D75 | -1.69 | 2.57 | 0.59 |
+| T (C) | CanRCM4 | -2.02 | 3.02 | 0.56 |
+| T (C) | CanESM2 | +1.58 | 2.75 | 0.38 |
+| P (mm/d) | D3 | -1.76 | 4.59 | 0.88 |
+| P (mm/d) | D15 | +18.73 | 24.87 | 0.79 |
+| P (mm/d) | D75 | +24.69 | 31.04 | 0.65 |
+| P (mm/d) | CanRCM4 | +0.79 | 7.23 | 0.65 |
+| P (mm/d) | CanESM2 | -1.60 | 10.38 | 0.31 |
 
-D3 is closest to the reference in both panels (best R², std near obs);
-D15/D75 are over-dispersed in P (std ~2.2x obs) with a large wet bias but
-still reasonable R² — the coarse domains track *which* stations/years are
-wettest but over-state the intensity of the extremes; CanESM2 is the most
-under-dispersed in P (std ~0.37x obs, R² 0.21) and the most mis-correlated
-in T (R² 0.33), i.e. its warm T tail and weak P tail are genuinely different
-extreme-day distributions, not small shifts.
+D3 is closest to the reference in both panels (best R², spatial std near
+obs); D15/D75 are over-dispersed in P (spatial std ~2.2x obs) with a large
+wet bias but still reasonable R² — the coarse domains know *where* it rains
+hard but over-state the intensity of the extremes; CanESM2 is the most
+under-dispersed in P (spatial std ~0.33x obs, R² 0.31) and the most
+mis-correlated in T (R² 0.38), i.e. its warm T tail and weak P tail are
+genuinely different extreme distributions, not small shifts.
