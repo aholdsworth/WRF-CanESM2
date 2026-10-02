@@ -23,3 +23,6 @@ _CONTEXT_ADD_CODE.md
 !elevation_bias/results/*.csv
 # extremes_validation: result tables are package outputs, not raw model/obs data
 !extremes_validation/results/*.csv
+# climate_taylor: figure outputs + input data cache are package artifacts, track them
+!climate_taylor/figures/*
+!climate_taylor/data/*.pkl
