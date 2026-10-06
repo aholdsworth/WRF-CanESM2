@@ -14,6 +14,7 @@ CanESM2, and NA-CORDEX/CMIP5 ensemble fields.
 
 | folder | contents |
 |--------|----------|
+| `bias_figure/` | Station bias figure (WRF d03 vs obs, 1986–2005): the `bias_figure.ipynb` plot notebook plus its compute step `make_bias_figure.py` and the shared readers/pooling (`seasonal_pooling.py`, `taylor_data.py`, `make_climo_d03.py`). |
 | `DataPrep/` | `cf_convert.py` — converts the raw WRF d03 daily files (pr, T2, wspd) to CF-compliant, zlib-compressed netCDF4 used for publication (bit-identical data, metadata only). See its README. |
 | `mean_changes/` | Seasonal/annual mean-change scripts (deltas + t-tests for WRF d03, CanRCM4, CanESM2) and the `plot_means_*` notebooks (incl. CORDEX/CMIP5 comparison panels), annual averages, and elevation-binned change. |
 | `extremes/` | Block-bootstrap scripts for extreme-percentile significance (per-gridcell and pooled land/ocean regional null test) and the `plot_extremes*` notebooks. |
