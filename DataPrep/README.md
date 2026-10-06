@@ -1,7 +1,26 @@
 # Data preparation
 
-Scripts for turning the raw CanESM2-WRF d03 daily output into the
-CF-compliant files used in the publication.
+Scripts for turning the raw CanESM2-WRF / CanRCM4 / CanESM2 output into the
+CF-compliant gridded files and the per-station / per-buoy CDO extractions
+used by the `Evaluation/` pipelines.
+
+## Station & buoy extraction (feeds `Evaluation/`)
+
+| script | produces |
+|--------|----------|
+| `make_wrf_canon.py` | `data/wrf_canon/` — canonical WRF per-station extractions, one `{var}_{dom}_{AGENCY}_{ID}.nc` per station/domain (t/pr/wind, d01–d03); the single WRF model source for all station comparisons. |
+| `extract_canrcm4_stations.py` | CanRCM4 per-station CDO files (M10) for the land + USW station set. |
+| `extract_wrf_wind_951.py` | WRF wind re-extraction for station 951 (corrupted-cache recovery). |
+| `make_climo_d03.py` | `pickles/climo_d03_hist.pkl` — gridded 1986–2005 d03 climatology (t/pr/wind) from the CF-compliant d03 daily files. |
+| `make_buoy_wind_obs.py` | `pickles/buoy_wind_obs_annuals.pkl` — buoy wind obs annuals for the Taylor wind panel. |
+| `extract_buoy_t_d02d03.sh`, `extract_buoy_wind_d02d03.sh` | per-buoy CDO extractions (tas/wspd) for the d02/d03 columns. |
+| `extract_d02_eccc_fix.sh` | ECCC d02 re-extraction fix (missing-station recovery). |
+| `extract_wrf_wind_d01_usw.sh` | WRF d01 wind extraction for the 5 USW WA/OR wind stations. |
+
+The buoy d01 extraction scripts + weight generators live in
+`Evaluation/buoy_validation/` (part of that pipeline).  All extraction
+scripts read raw model output and write under the analysis working tree
+(`data/`, `station_cdo/`, `pickles/`) — none of that data is in this repo.
 
 ## cf_convert.py
 

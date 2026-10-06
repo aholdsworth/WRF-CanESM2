@@ -14,12 +14,11 @@ CanESM2, and NA-CORDEX/CMIP5 ensemble fields.
 
 | folder | contents |
 |--------|----------|
-| `bias_figure/` | Station bias figure (WRF d03 vs obs, 1986–2005): the `bias_figure.ipynb` plot notebook plus its compute step `make_bias_figure.py` and the shared readers/pooling (`seasonal_pooling.py`, `taylor_data.py`, `make_climo_d03.py`). |
-| `bias_comparisons/` | Multi-model station bias maps (D02/D01/CanRCM4/CanESM2 vs obs, 1986–2005): the `bias_comparisons.ipynb` fiddle notebook + standalone twin `make_bias_comparisons.py` (shared `seasonal_pooling.py`). |
-| `DataPrep/` | `cf_convert.py` — converts the raw WRF d03 daily files (pr, T2, wspd) to CF-compliant, zlib-compressed netCDF4 used for publication (bit-identical data, metadata only). See its README. |
+| `Evaluation/` | All station/model-comparison skill code (1986–2005, 5 models): `climate_taylor/` (3-panel climate Taylor), `bias_figure/` (D03 bias figure), `bias_comparisons/` (multi-model bias maps), `elevation_bias/` (elevation-bias grid + shared skill-calc core: `seasonal_pooling.py`, station/skill/R² table producers), `buoy_validation/` (D03 buoy validation), `climate_land/` + `climate_buoy/` (land & buoy climatology tables), `extremes_validation/` (p75/p95 T & P validation). See its README. |
+| `DataPrep/` | CF conversion (`cf_convert.py`) + station/buoy data extraction (`make_wrf_canon.py`, `extract_canrcm4_stations.py`, per-buoy `.sh`, climatology). See its README. |
 | `mean_changes/` | Seasonal/annual mean-change scripts (deltas + t-tests for WRF d03, CanRCM4, CanESM2) and the `plot_means_*` notebooks (incl. CORDEX/CMIP5 comparison panels), annual averages, and elevation-binned change. |
-| `extremes/` | Block-bootstrap scripts for extreme-percentile significance (per-gridcell and pooled land/ocean regional null test) and the `plot_extremes*` notebooks. |
-| `elevation_bias/` | Elevation-bias diagnostic grid: the `elev_bias_grid.ipynb` walkthrough (5 rows × 4 cols: map, T-bias, PR-bias, wind-bias scatter vs elevation bias; PR also in absolute mm/day) plus the table producers (`make_station_tables.py`, `make_skill_tables.py`, `make_elev_bias_grid.py`, `plot_elev_bias_revised.py`, `seasonal_pooling.py`) and the result/methods tables in `results/`. |
+| `extremes/` | Block-bootstrap scripts for extreme-percentile significance (per-gridcell and pooled land/ocean regional null test) and the `plot_extremes*` notebooks. (Station-level p75/p95 validation lives in `Evaluation/extremes_validation/`. |
+| `elevation_bias/` | — moved to `Evaluation/elevation_bias/` (see `Evaluation/`). |
 | `CompoundEvents/` | Two-stage compound-extremes pipeline: per-DOY rolling percentile thresholds, then counts of warm/cold x wet/dry compound event days; drizzle-day counts; plotting notebooks. |
 | `compression/` | Compression/PPC verification notebooks and scripts for the WRF d03 run. |
 | `land_and_ocean/` | Regional-average (land/ocean) analysis notebooks. |

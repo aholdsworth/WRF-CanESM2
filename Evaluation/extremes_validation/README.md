@@ -45,22 +45,25 @@ Model datasets: `D3` = WRF d03, `D15` = WRF d02, `D75` = WRF d01,
 - `extreme_p95.ipynb` — self-contained walkthrough: station selection, daily
   series build (cached), per-station p75/p95, the p95 skill table
   (bias / RMSE / R²) and a p95 Taylor diagram, plus five figures.  Imports
-  the shared obs loaders / Rule-1 gate from `<BASE>/seasonal_pooling.py` and
-  inlines the model-file readers (it does not import
+  the shared obs loaders / Rule-1 gate from the repo's
+  `elevation_bias/seasonal_pooling.py` (added to `sys.path` from the notebook
+  setup cell) and inlines the model-file readers (it does not import
   `make_station_tables.py`).
 
-Run (single-threaded — see the OpenBLAS thread-spin note in AGENTS.md):
+Run (single-threaded — see the OpenBLAS thread-spin note in AGENTS.md), from
+the analysis working tree (the repo's parent, which holds `data/` and
+`pickles/`; set `WRF_CANESM2_REPO` to the repo root to override):
 
     cd <BASE>
-    OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 \
-        /home/amh001/space_fs7/software_2022/python/py_2024/bin/python \
-        _run_extreme_p95_nb.py
+    OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 jupyter nbconvert --to notebook --execute --inplace \
+        <repo>/extremes_validation/extreme_p95.ipynb
 
-The notebook is regenerated from `<BASE>/_mk_extreme_p95_nb.py` (edit the
-builder, re-run it, then run the notebook).  The daily series are cached in
-`<BASE>/pickles/extreme_p95_daily.pkl`; bump `CACHE_VERSION` in the notebook
-(rebuild via the builder) if the readers or station set change.  A cache-hit
-re-run reproduces the result CSVs exactly.
+The notebook is regenerated from `make_extreme_p95_nb.py` (edit the builder,
+re-run it, then run the notebook).  `test_p95_taylor.py` re-plots the p95
+Taylor panel from the cached `extreme_p95*.pkl` as a smoke test of the
+diagram code.  The daily series are cached in `<BASE>/pickles/extreme_p95_daily.pkl`;
+bump `CACHE_VERSION` in the notebook (rebuild via the builder) if the readers
+or station set change.  A cache-hit re-run reproduces the result CSVs exactly.
 
 ## Outputs
 

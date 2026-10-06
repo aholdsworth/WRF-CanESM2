@@ -43,7 +43,7 @@ DATA = os.path.join(BASE, 'data')
 FILES = os.path.join(BASE, 'files')
 PFM_WRF = os.path.join(DATA, 'wrf_canon')
 
-sys.path.insert(0, os.path.join(BASE, 'elevation_bias'))  # shared seasonal_pooling.py
+sys.path.insert(0, os.path.join(BASE, '..', 'elevation_bias'))  # shared seasonal_pooling.py
 import seasonal_pooling as sp
 import taylor_data as td
 

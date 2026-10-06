@@ -75,7 +75,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 _BASE = os.path.dirname(os.path.abspath(__file__))
 import sys as _sys
-_sys.path.insert(0, os.path.join(_BASE, 'elevation_bias'))  # shared seasonal_pooling.py
+_sys.path.insert(0, os.path.join(_BASE, '..', 'elevation_bias'))  # shared seasonal_pooling.py
 import seasonal_pooling as sp
 
 BASE = _BASE
