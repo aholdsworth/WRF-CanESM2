@@ -17,9 +17,9 @@
 set -uo pipefail
 cd "$(dirname "$0")"
 
-CDO="${CDO:-/home/amh001/space_fs7/software_2022/python/cdo_env/bin/cdo}"
-PFM="${PFM:-/gpfs/fs7/dfo/hpcmc/pfm/spfm000/CanESM2-WRF}"
-SRC="${WIND_D01_HOURLY:-$PFM/historical/variables_complete/wind_d01_hourly.nc}"
+CDO=/home/amh001/space_fs7/software_2022/python/cdo_env/bin/cdo
+PFM=/gpfs/fs7/dfo/hpcmc/pfm/spfm000/CanESM2-WRF
+SRC="$PFM/historical/variables_complete/wind_d01_hourly.nc"
 W="weight_files_gen/CanESM2-WRF-D01"
 DESCDIR="station_cdo/buoys/descs"
 LOGDIR="station_cdo/logs"

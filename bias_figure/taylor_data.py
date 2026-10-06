@@ -73,9 +73,12 @@ from netCDF4 import Dataset, num2date
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+_BASE = os.path.dirname(os.path.abspath(__file__))
+import sys as _sys
+_sys.path.insert(0, os.path.join(_BASE, 'elevation_bias'))  # shared seasonal_pooling.py
 import seasonal_pooling as sp
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+BASE = _BASE
 DATA = os.path.join(BASE, 'data')
 FILES = os.path.join(BASE, 'files')
 PFM_WRF = os.path.join(DATA, 'wrf_canon')

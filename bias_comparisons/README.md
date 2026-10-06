@@ -19,7 +19,7 @@ buoys pinned to the validated D03 set per variable — t 8
 |------|------|
 | `bias_comparisons.ipynb`        | FIDDLE notebook: reproduces `bias_comparisons.png` from `pickles/station_tables.pkl` (no re-extraction). KNOBS cell (map window, zoom mode, topo scale, ranges, dot size/edge, mask-ocean) is where you play; run top-to-bottom. |
 | `make_bias_comparisons.py`      | Standalone script twin (older PlateCarree layout): reads `bias_figure.pkl` (gated Fig-1 station set + obs reference), `data/wrf_canon` (D02/D01 rows), `seasonal_pooling.cdo_station_value` (Can* rows), and the validated buoy tables; writes `figures/bias_comparisons.png`. |
-| `seasonal_pooling.py`           | Shared pooling source of truth; used by `make_bias_comparisons.py` via `sp.cdo_station_value` for the CanESM2/CanRCM4 per-station period values (M9/M10 CDO files). |
+| `seasonal_pooling.py`           | (shared, at `elevation_bias/seasonal_pooling.py`) — `sp.cdo_station_value` for the CanESM2/CanRCM4 rows (M9/M10 CDO files); `make_bias_comparisons.py` imports it from that one canonical location. |
 
 The notebook also imports `WRFDomainLib` from the **repo root**
 (`calc_wps_domain_info`, for the D03 Lambert box).

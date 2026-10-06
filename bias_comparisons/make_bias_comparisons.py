@@ -65,7 +65,7 @@ DATA = os.path.join(BASE, 'data')
 WRF_ST_DIR = os.path.join(DATA, 'wrf_canon')
 START_YEAR, END_YEAR = 1986, 2005
 
-sys.path.insert(0, BASE)
+sys.path.insert(0, os.path.join(BASE, 'elevation_bias'))  # shared seasonal_pooling.py
 import seasonal_pooling as sp
 OUT_DIR = os.path.join(BASE, 'figures')
 os.makedirs(OUT_DIR, exist_ok=True)

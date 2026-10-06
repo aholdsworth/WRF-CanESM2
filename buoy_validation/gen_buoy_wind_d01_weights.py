@@ -34,10 +34,8 @@ import numpy as np
 import netCDF4 as nc
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-SRC = os.environ.get(
-    "WIND_D01_HOURLY",
-    "/gpfs/fs7/dfo/hpcmc/pfm/spfm000/CanESM2-WRF/"
-    "historical/variables_complete/wind_d01_hourly.nc")
+SRC = ("/gpfs/fs7/dfo/hpcmc/pfm/spfm000/CanESM2-WRF/"
+       "historical/variables_complete/wind_d01_hourly.nc")
 OUTDIR = os.path.join(ROOT, "weight_files_gen", "CanESM2-WRF-D01")
 CSV = os.path.join(ROOT, "station_cdo", "buoys", "buoy_descs.csv")
 

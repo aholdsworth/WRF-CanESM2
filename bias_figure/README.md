@@ -14,7 +14,7 @@ T; % for PR and wind).
 |------|------|
 | `bias_figure.ipynb`        | PLOT step: loads the precomputed pickles and draws the panels (run top-to-bottom, `py_2024` env). |
 | `make_bias_figure.py`      | COMPUTE step (15–20 min): reads all obs + WRF d03 per-station files, computes everything, saves `pickles/bias_figure.pkl` + `pickles/bias_filter_comparison.csv`. |
-| `seasonal_pooling.py`      | Shared source of truth for the obs-side pooling gate (Rule 1: ≥90 % of the year's expected days, ≥15 surviving years; Rule 2 seasons) and the `skill()` aggregation. |
+| `seasonal_pooling.py`      | (shared, at `elevation_bias/seasonal_pooling.py`) — Rule 1/2 pooling gate + `skill()` aggregation; the scripts here import it from that one canonical location. |
 | `taylor_data.py`           | Station-set + WRF/Can* per-station file readers and annual series builders used by `make_bias_figure.py` (canonical 173-land-row sets from `station_tables.pkl`). |
 | `make_climo_d03.py`        | Builds `pickles/climo_d03_hist.pkl` — the gridded 1986–2005 d03 climatology (t degC, pr mm/day, wind m/s) the notebook shows in the top row. |
 

@@ -36,8 +36,7 @@ register_projection(GeoAxes)
 
 warnings.filterwarnings("ignore")
 
-BASE = os.environ.get('ELEV_BIAS_BASE',
-    '/gpfs/fs7/dfo/hpcmc/comda/fs2_comda/amh001/AI_WORKDIR/NOTEBOOKS')
+BASE = '/gpfs/fs7/dfo/hpcmc/comda/fs2_comda/amh001/AI_WORKDIR/NOTEBOOKS'
 OUT  = os.path.join(BASE, 'figures', 'elevation_bias', 'elevation_bias_grid.png')
 os.makedirs(os.path.dirname(OUT), exist_ok=True)
 

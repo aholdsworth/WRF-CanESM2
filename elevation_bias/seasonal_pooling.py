@@ -1,21 +1,28 @@
 #!/usr/bin/env python3
 """
-seasonal_pooling.py — season-first pooling convention for bias & skill metrics.
+seasonal_pooling.py — general averaging rules for bias & skill metrics.
 
-Convention (agreed 2026-09-18, see seasonal_pooling_handoff_20260918.md):
+Convention (agreed 2026-09-25; supersedes the season-first hierarchy from
+seasonal_pooling_handoff_20260918.md — see AGENTS.md "General averaging
+rules").  The season-first pickles are preserved in pickles/OLDWAYS/.
 
-  Pooling hierarchy (obs side):  day -> season -> year -> period
-  with equal weight at each level.  Seasons are DJF / MAM / JJA / SON.
+Rule 1 — ANNUAL values (used for bias / skill / period values):
+  * average daily values directly over the calendar year (NO season-first
+    step; a year is not the mean of its 4 seasons).
+  * a year is valid only if >= ANNUAL_GATE (0.90) of the year's expected
+    days (leap-aware: 365 or 366) are present; otherwise the year is NaN.
+  * the period value (1986-2005) is the mean of the surviving annual
+    values, reported only if >= MIN_YEARS (15) of the 20 years survive.
 
-  Completeness gate ("10% rule" per season):
-    * a season value is NaN if < 90% of its expected days (or hours, for
-      hourly wind) are present.  Expected days/hours are computed from the
-      actual calendar for each year (leap years included), never hardcoded.
-    * a year is NaN if any of its 4 seasons is NaN.
-    * the period value (1986-2005) is the mean of the surviving annual
-      values, reported only if >= MIN_YEARS (15) of the 20 years survive.
+Rule 2 — TRUE SEASONAL values:
+  * meteorological seasons: DJF(y) = Dec(y-1) + Jan(y)-Feb(y);
+    MAM/JJA/SON(y) = calendar year y.
+  * a season-year is valid only if ALL 3 of its months are present
+    (each month has at least one valid day); a season missing any of its
+    3 months is skipped (NaN).  There is NO 90%-of-days gate on seasonal
+    values — only the 3-months-present requirement.
 
-  Like-for-like comparison:
+Like-for-like comparison (unchanged):
     * the surviving-year set is defined by the OBS series (the only series
       that can have gaps); the model series (complete) is restricted to the
       same years before averaging.
@@ -26,12 +33,6 @@ Convention (agreed 2026-09-18, see seasonal_pooling_handoff_20260918.md):
     * RMSE = sqrt( mean( (model_year - obs_year)^2 ) )
     * reported per station: bias, MAE, RMSE, n_years; all NaN if
       n_years < MIN_YEARS.
-
-  Citations for the pooling hierarchy:
-    * Jones & McAvoy (2010), "Guide to Climate Indices", WMO/TUBITAK,
-      section 3.2.1 (seasonal and annual values as means of lower-level
-      values).
-    * WMO Guide to Climatological Practices, WMO No. 100.
 
 This module is the single source of truth for the obs-side gate/mask and the
 skill() aggregation; it is shared by make_skill_tables.py (pickle producer)
@@ -54,15 +55,28 @@ START_YEAR, END_YEAR = 1986, 2005
 YEARS = tuple(range(START_YEAR, END_YEAR + 1))
 SEASONS = ('DJF', 'MAM', 'JJA', 'SON')
 MIN_YEARS = 15        # min surviving years for a period value / skill report
-GATE_FRAC = 0.90      # a season needs >= 90% of its expected days/hours
+ANNUAL_GATE = 0.90    # a YEAR needs >= 90% of its expected days (Rule 1)
 
-SEASON_OF_MONTH = {1: 'DJF', 2: 'DJF', 3: 'MAM', 4: 'MAM', 5: 'MAM',
-                   6: 'JJA', 7: 'JJA', 8: 'JJA', 9: 'SON', 10: 'SON',
-                   11: 'SON', 12: 'DJF'}
+# meteorological-season assignment: month -> (season, analysis-year offset).
+# Dec (12) belongs to the FOLLOWING year's DJF: DJF(y) = Dec(y-1)+Jan-Feb(y).
+SEASON_OF_MONTH = {1: ('DJF', 0), 2: ('DJF', 0),
+                   3: ('MAM', 0), 4: ('MAM', 0), 5: ('MAM', 0),
+                   6: ('JJA', 0), 7: ('JJA', 0), 8: ('JJA', 0),
+                   9: ('SON', 0), 10: ('SON', 0), 11: ('SON', 0),
+                   12: ('DJF', 1)}
 
-# BCH stations that record p24 in tenths of mm in the wide CSVs
-# (verified 2026-09: their /10 annual sums are climatologically sensible).
-BCH_TENTHS_MM = {'BLN', 'DLU', 'MIS', 'NTY', 'WOL'}
+# which calendar months make up each season (for the 3-months-present gate)
+SEASON_MONTHS = {'DJF': (12, 1, 2), 'MAM': (3, 4, 5),
+                 'JJA': (6, 7, 8), 'SON': (9, 10, 11)}
+
+# NOTE (2026-09-26): a /10 "tenths-of-mm" scaling was previously applied to
+# {BLN, DLU, MIS, NTY, WOL}.  It had NO source (not in the CSV, not in the
+# station_obs_data zip, and DATA_README / station_data_inventory both document
+# BCH_p24Id.csv as "precip 24-h, mm").  The /10 was inferred on 2026-09-17 from
+# the resulting small numbers (circular), and it made the obs 10x too small vs
+# the model (WOL obs 247 vs model 2855 mm/yr).  Raw p24 is on the same mm/yr
+# scale as the other 13 BCH stations and agrees with the model to within ~40%.
+# The /10 has been REMOVED.  See AGENTS.md "BCH p24 /10" note.
 
 # ---------------------------------------------------------------------------
 # Calendar
@@ -86,57 +100,96 @@ def expected_days_table(years=YEARS):
 # ---------------------------------------------------------------------------
 # Season / year aggregation (core of the convention)
 # ---------------------------------------------------------------------------
+def _analysis_year_month(dates):
+    """(analysis_year, month) arrays for a DatetimeIndex under the
+    meteorological-season convention: Dec(y-1) -> DJF(y), Jan/Feb(y) -> DJF(y).
+    December is assigned to the FOLLOWING year."""
+    yr = np.asarray(dates.year, dtype=int)
+    mo = np.asarray(dates.month, dtype=int)
+    ay = yr + np.where(mo == 12, 1, 0)
+    return ay, mo
+
+
 def seasonal_year_frame(daily, kind, freq='D'):
-    """Pool a daily (or hourly) obs series to a (20 years x 4 seasons) frame.
+    """Rule 2 — pool a daily (or hourly) obs series to a (20 x 4) seasonal frame.
 
     daily : pd.Series indexed by datetime, values numeric (NaN = missing).
             For wind this is the HOURLY series (already in m/s).
     kind  : 'mean' (t, wind) or 'sum' (pr).
-    freq  : 'D' for daily data (expected count = days), 'H' for hourly
-            (expected count = hours = days*24).
+    freq  : 'D' for daily data, 'H' for hourly.
 
-    Returns DataFrame index=years, columns=SEASONS; NaN where the season is
-    < GATE_FRAC complete.  A season with zero observed values is NaN.
+    A season-year (y, s) is valid only if ALL 3 of its calendar months are
+    present (each has >= 1 valid day); a season missing any month is NaN.
+    There is NO 90%-of-days gate here (that is the Rule-1 annual gate).
+    DJF(y) = Dec(y-1) + Jan(y)-Feb(y).
+
+    Returns DataFrame index=years, columns=SEASONS.
     """
-    exp = expected_days_table()
+    out = pd.DataFrame(np.nan, index=list(YEARS), columns=list(SEASONS))
     s = daily.dropna()
     if len(s) == 0:
-        return pd.DataFrame(np.nan, index=list(YEARS), columns=list(SEASONS))
+        return out
     s = s[(s.index >= pd.Timestamp(START_YEAR, 1, 1)) &
           (s.index < pd.Timestamp(END_YEAR + 1, 1, 1))]
     if len(s) == 0:
-        return pd.DataFrame(np.nan, index=list(YEARS), columns=list(SEASONS))
+        return out
 
-    year = pd.Series(s.index.year, index=s.index)
-    seas = pd.Series(s.index.month, index=s.index).map(SEASON_OF_MONTH)
-
-    vals = np.full((len(YEARS), len(SEASONS)), np.nan)
+    ay, mo = _analysis_year_month(s.index)
+    ay = pd.Series(ay, index=s.index)
+    mo = pd.Series(mo, index=s.index)
+    # SEASON_OF_MONTH maps month -> (season_name, year_offset); take the name.
+    seas = pd.Series(mo, index=s.index).map(lambda m: SEASON_OF_MONTH[m][0])
+    vals = s.values
     ymap = {y: i for i, y in enumerate(YEARS)}
     smap = {st: i for i, st in enumerate(SEASONS)}
     for y in YEARS:
         for st in SEASONS:
-            m = ((year == y) & (seas == st)).values
-            n_obs = int(m.sum())
-            n_exp = exp[(y, st)] * (24 if freq == 'H' else 1)
-            if n_obs < GATE_FRAC * n_exp:
+            sel = (ay == y) & (seas == st)
+            if not sel.any():
                 continue
-            v = s.values[m].sum() if kind == 'sum' else s.values[m].mean()
-            vals[ymap[y], smap[st]] = float(v)
-    df = pd.DataFrame(vals, index=list(YEARS), columns=list(SEASONS))
-    df.index.name = 'year'
-    return df
+            months_present = set(mo[sel].unique().tolist())
+            if not set(SEASON_MONTHS[st]) <= months_present:
+                continue            # a whole month of the season is absent
+            v = vals[sel.values].sum() if kind == 'sum' else vals[sel.values].mean()
+            out.iat[ymap[y], smap[st]] = float(v)
+    out.index.name = 'year'
+    return out
 
-def year_mask(seas_df):
-    """Surviving-year mask: a year survives iff all 4 seasons are non-NaN."""
-    return seas_df.notna().all(axis=1)
 
-def annual_from_seasons(seas_df):
-    """Annual value per year = mean of its 4 seasonal values (NaN if any
-    season is NaN).  For pr the seasonal values are seasonal SUMS, so the
-    annual is the mean of the 4 seasonal sums."""
-    ann = seas_df.mean(axis=1).where(seas_df.notna().all(axis=1))
-    ann.name = 'annual'
-    return ann
+def annual_frame(daily, kind, freq='D', gate=None):
+    """Rule 1 — annual value per calendar year from daily (or hourly) values.
+
+    A year is valid only if >= gate (ANNUAL_GATE) of the year's expected
+    days (leap-aware 365/366) are present; otherwise NaN.  No season-first
+    step: the annual value is the direct mean (or sum, for pr) of the year's
+    days.
+
+    Returns Series index=YEARS.
+    """
+    if gate is None:
+        gate = ANNUAL_GATE
+    out = pd.Series(np.nan, index=list(YEARS))
+    s = daily.dropna()
+    if len(s) == 0:
+        return out
+    s = s[(s.index >= pd.Timestamp(START_YEAR, 1, 1)) &
+          (s.index < pd.Timestamp(END_YEAR + 1, 1, 1))]
+    if len(s) == 0:
+        return out
+
+    yr = pd.Series(s.index.year, index=s.index)
+    scale = 24 if freq == 'H' else 1
+    ymap = {y: i for i, y in enumerate(YEARS)}
+    for y in YEARS:
+        sel = (yr == y)
+        n_obs = int(sel.sum())
+        n_exp = (366 if calendar.isleap(y) else 365) * scale
+        if n_obs < gate * n_exp:
+            continue
+        v = s.values[sel.values].sum() if kind == 'sum' else s.values[sel.values].mean()
+        out.iat[ymap[y]] = float(v)
+    out.name = 'annual'
+    return out
 
 def period_value(annual):
     """1986-2005 period value: mean of surviving annual values, NaN unless
@@ -146,26 +199,31 @@ def period_value(annual):
         return np.nan
     return float(a.mean())
 
-def obs_seasonal_pool(daily, kind, freq='D'):
-    """Full obs-side pipeline for one station/variable.
+def obs_seasonal_pool(daily, kind, freq='D', gate=None):
+    """Full obs-side pipeline for one station/variable (new rules, 2026-09-25).
+
+    annual  : Rule 1 — direct day->year mean/sum, year valid only if
+              >= gate (ANNUAL_GATE) of its expected days are present.
+    seas    : Rule 2 — true seasonal values, valid only if all 3 of the
+              season's months are present.
 
     Returns dict with:
-      seas        : (20 x 4) seasonal frame (pre-year-pooling)
-      annual      : Series (20,) annual values (NaN for dropped years)
-      year_mask   : Series (20,) bool
+      seas        : (20 x 4) seasonal frame (Rule 2)
+      annual      : Series (20,) annual values (Rule 1; NaN for dropped years)
+      year_mask   : Series (20,) bool  (annual non-NaN)
       years       : list[int] surviving years
       n_years     : int
       period      : float | NaN  (period value of the OBS series)
       dropped     : list of (year, reason) for dropped years
     """
     seas = seasonal_year_frame(daily, kind, freq=freq)
-    mask = year_mask(seas)
-    annual = annual_from_seasons(seas)
+    annual = annual_frame(daily, kind, freq=freq, gate=gate)
+    mask = annual.notna()
     dropped = []
     for y in YEARS:
         if not mask.loc[y]:
-            bad = [st for st in SEASONS if np.isnan(seas.loc[y, st])]
-            dropped.append((y, 'season(s) <90% complete: ' + ','.join(bad)))
+            dropped.append((y, 'year <%.0f%% complete (Rule 1)'
+                              % (100 * (ANNUAL_GATE if gate is None else gate))))
     return dict(seas=seas, annual=annual, year_mask=mask,
                 years=[int(y) for y in YEARS if mask.loc[y]],
                 n_years=int(mask.sum()),
@@ -181,8 +239,8 @@ def skill(model_annual, obs_annual, min_years=MIN_YEARS):
     obs_annual   : pd.Series, annual obs values (NaN = dropped year)
 
     The model series is assumed complete; the shared year set is the obs
-    surviving years (obs_annual non-NaN).  Returns (bias, mae, rmse, n) or
-    (NaN, NaN, NaN, n) if fewer than min_years shared years.
+    surviving years (obs_annual non-NaN).  Returns (bias, mae, rmse, r2, n)
+    or (NaN, NaN, NaN, NaN, n) if fewer than min_years shared years.
     """
     if isinstance(model_annual, dict):
         model_annual = pd.Series(model_annual)
@@ -190,12 +248,13 @@ def skill(model_annual, obs_annual, min_years=MIN_YEARS):
     o = obs_annual.reindex(list(YEARS)).astype(float)
     ok = o.notna() & m.notna()
     if int(ok.sum()) < min_years:
-        return np.nan, np.nan, np.nan, int(ok.sum())
+        return np.nan, np.nan, np.nan, np.nan, int(ok.sum())
     dm = (m - o)[ok]
     bias = float(dm.mean())
     mae = float(dm.abs().mean())
     rmse = float(np.sqrt((dm ** 2).mean()))
-    return bias, mae, rmse, int(ok.sum())
+    r2 = float(np.corrcoef(m[ok].values, o[ok].values)[0, 1])
+    return bias, mae, rmse, r2, int(ok.sum())
 
 def pct_bias(model_period, obs_period):
     """Percentage bias with the obs>0 guard (pr, wind)."""
@@ -301,7 +360,11 @@ def noaa_daily_series(sid, kind, base_dir):
     """NOAA GHCN-d -> daily Series.
     kind: 't'    -> TAVG where present, else (TMIN+TMAX)/2 (daily-level
                     fallback; pooling is what changed, not variable choice)
-          'pr'   -> PRCP in mm (GHCN-D PRCP column is already 0.01 mm, i.e. mm)
+          'pr'   -> PRCP in mm.  The local GHCN-d CSVs (data/noaa_obs/) carry
+                    PRCP ALREADY IN MM — verified against the raw data on
+                    2026-09-25 (daily max 2514.6; Portland ~920-1350 mm/yr).
+                    The 2026-09-23 x25.4 "noaainch fix" was WRONG and has
+                    been removed (see AGENTS.md).
           'wind' -> AWND in m/s (mph * 0.44704)
     """
     g = noaa_read(base_dir).get(str(sid))
@@ -311,9 +374,9 @@ def noaa_daily_series(sid, kind, base_dir):
     if kind == 't':
         s = g['TAVG'].fillna((g['TMIN'] + g['TMAX']) / 2.0)
     elif kind == 'pr':
-        s = g['PRCP']
+        s = g['PRCP']                 # PRCP is already mm in these CSVs (see above)
     elif kind == 'wind':
-        s = g['AWND'] * 0.44704
+        s = g['AWND'] * 0.44704       # mph -> m/s
     else:
         return None
     s = s.copy()
@@ -339,7 +402,7 @@ def bch_read(base_dir):
 
 def bch_daily_series(sid, kind, base_dir):
     """BCH daily wide CSVs -> Series.
-    kind: 't'  -> (tn+tx)/2 ; 'pr' -> p24 (tenths-mm stations /10)."""
+    kind: 't'  -> (tn+tx)/2 ; 'pr' -> p24 (mm; the old /10 was removed 2026-09-26)."""
     d = bch_read(base_dir)
     if not d:
         return None
@@ -350,9 +413,7 @@ def bch_daily_series(sid, kind, base_dir):
     elif kind == 'pr':
         if str(sid) not in d['p24'].columns:
             return None
-        s = d['p24'][str(sid)].copy()
-        if sid in BCH_TENTHS_MM:
-            s = s / 10.0
+        s = d['p24'][str(sid)].copy()   # p24 is in mm (the /10 was removed 2026-09-26)
     else:
         return None   # no BCH wind
     return s

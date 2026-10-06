@@ -25,10 +25,7 @@ import numpy as np
 import netCDF4 as nc
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
-GEO = os.environ.get(
-    "GEO_EM_D03",
-    os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                 "geo_em.d03.nc"))
+GEO = os.path.join(ROOT, "WRF-CanESM2/geo_em.d03.nc")
 OUTDIR = os.path.join(ROOT, "weight_files_gen", "CanESM2-WRF-D03")
 CSV = os.path.join(ROOT, "station_cdo", "buoys", "buoy_descs.csv")
 

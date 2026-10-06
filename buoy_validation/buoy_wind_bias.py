@@ -12,17 +12,14 @@ Implements the locked decisions in buoy_wind_bias_handoff_20260922.md §2:
   * z0 = 0.0002 (same z0 as SalishSea/WRF/Historical2023/WindEvaluation.ipynb).
   * comparison level = DAILY values (hourly WRF -> mean of surviving hours;
     daily CanESM2/CanRCM4 -> as-is).
-  * missing-data cascade (90% gate at every level, obs-driven; same
-    GATE_FRAC=0.9 as the land pipeline):
-      day  excluded if >10% of its hours missing or any gap > 3 h;
-      month excluded if >10% of its surviving days missing;
-      season excluded if < 2 of 3 months complete;
-      year = mean of its passing seasons, kept if >= --year-gate of 4
-             seasons pass (default 3 = relaxed practice; 4 = locked
-             handoff spec, written to *_strict files for traceability).
+  * pooling rules (2026-09-25; same as the land pipeline):
+      Rule 1 (annual): mean of day values, year valid only if >= 90% of the
+             year's expected days are present.  A day is excluded if >10% of
+             its hours are missing or any gap > 3 h.
+      Rule 2 (seasonal): a season-year is valid only if all 3 of its months
+             are each >= 90% of their calendar days (meteorological DJF).
   * Apples-to-apples: model annuals are always computed on the SAME
-    surviving-year set as the obs (shared-year intersection), so the year
-    gate changes which years enter, never the pairing.
+    surviving-year set as the obs (shared-year intersection).
   * metrics per buoy x model: n_years, obs period mean, model period mean,
     bias % = 100*(m-o)/o, MAE, RMSE (on the annual values).
     pooled row = mean over the CORE set: buoys with >= --min-years (default 8)
@@ -45,11 +42,11 @@ Model sources (per-buoy 1x1 files):
 
 Outputs (per --tag suffix, e.g. --tag _strict for the locked 4/4 run):
   pickles/buoy_wind_tables<tag>.pkl   (per-buoy x model annual/seasonal tables)
-  results/buoy_wind_bias<tag>.csv     (main table)
-  results/buoy_wind_bias_pooled<tag>.csv
+  files/buoy_wind_bias<tag>.csv       (main table)
+  files/buoy_wind_bias_pooled<tag>.csv
   stdout: surviving-years report (headline), main table, pooled row.
 
-Usage:  python buoy_wind_bias.py [--min-years 15] [--year-gate 3|4]
+Usage:  python buoy_wind_bias.py [--min-years 8] [--tag _strict]
                                 [--tag _strict] [--obs-root DIR]
 
 Environment: py_2024 only. No network. Read-only obs + PFM.
@@ -66,28 +63,12 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+import seasonal_pooling as sp  # ANNUAL_GATE, SEASONS, YEARS, MIN_YEARS, SEASON_OF_MONTH, ...
+
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
-# Time window / season structure (self-contained; identical to the land-station
-# seasonal_pooling.py module this analysis was built on).
-START_YEAR, END_YEAR = 1986, 2005
-YEARS = tuple(range(START_YEAR, END_YEAR + 1))
-SEASONS = ('DJF', 'MAM', 'JJA', 'SON')
-MIN_YEARS = 8           # min shared surviving years for a buoy to enter the CORE pool
-GATE_FRAC = 0.90        # a day/month/season needs >= 90% of its parent level
-SEASON_OF_MONTH = {1: 'DJF', 2: 'DJF', 3: 'MAM', 4: 'MAM', 5: 'MAM',
-                   6: 'JJA', 7: 'JJA', 8: 'JJA', 9: 'SON', 10: 'SON',
-                   11: 'SON', 12: 'SON'}
-
-# shims so the sp.<name> references below read naturally and are grep-able
-# against the original module
-sp = type('sp', (), {
-    'YEARS': YEARS, 'SEASONS': SEASONS, 'MIN_YEARS': MIN_YEARS,
-    'GATE_FRAC': GATE_FRAC, 'SEASON_OF_MONTH': SEASON_OF_MONTH, 'START_YEAR': START_YEAR,
-    'END_YEAR': END_YEAR,
-})()
-
 Z0 = 0.0002
 H_OBS, H_MODEL = 5.0, 10.0
 # Height factor: scale OBS (5 m anemometer) UP to model height (10 m), per
@@ -221,17 +202,15 @@ def wrf_d01_match(buoy_id):
 # ---------------------------------------------------------------------------
 # Cascade: hourly -> daily -> month -> season -> year (handoff §2)
 # ---------------------------------------------------------------------------
-def daily_from_hourly(hourly, gate=sp.GATE_FRAC, per_day=24, max_gap_h=3):
-    """Daily value = mean of the day's hours.
+def daily_from_hourly(hourly, gate=0.75, per_day=24):
+    """Daily value = mean of the day's hours; day valid if >= gate*per_day
+    hours are present. No intra-day gap filter (matches the land pipeline:
+    seasonal_pooling annual_frame only gates on days-present).
 
-    A day SURVIVES only if:
-      * at least gate of its per_day hours are present, AND
-      * for hourly input (per_day >= 2): no run of missing hours longer
-        than max_gap_h hours (a 24-h fill of a day whose samples are all
-        clustered in one 6-h burst is not a valid daily mean).
-    Daily model values (per_day=1) carry no intra-day information; their
-    90% completeness is enforced at the month/season level instead.
-    """
+    BUOY-ONLY gate (2026-09-26): default day-gate 0.75 (18 h of 24), deliberately
+    LOOSER than the land pipeline's 0.90.  Buoys have many short days and the
+    strict 90% day-gate was dropping ~2,200 days/buoy.  Local to the buoy
+    scripts; seasonal_pooling.py (land) is untouched."""
     h = hourly.dropna()
     h = h[(h.index >= pd.Timestamp(1986, 1, 1)) & (h.index < pd.Timestamp(2006, 1, 1))]
     if h.empty:
@@ -241,45 +220,19 @@ def daily_from_hourly(hourly, gate=sp.GATE_FRAC, per_day=24, max_gap_h=3):
     days = g.mean()
     counts = g.count()
     ok = counts >= gate * per_day
-    if per_day >= 2:
-        # Intra-day gap check: a day also dies if it contains a run of
-        # missing hours longer than max_gap_h.  Runs are measured WITHIN a
-        # day only (reset at each midnight): a missing run that continues
-        # into an absent neighbouring day is handled one level up, where
-        # the month gate (90% of calendar days) and the season gate (90%
-        # of months) drop the months around long data gaps.  Only intra-day
-        # gaps are a hazard here, because the daily mean fills them
-        # silently.
-        day0 = h.index.floor('D')
-        keep_days = day0[day0.isin(days.index[ok])].unique()
-        if len(keep_days):
-            grid = h.reindex(
-                pd.DatetimeIndex(np.repeat(keep_days, per_day)) +
-                pd.to_timedelta(np.tile(np.arange(per_day), len(keep_days)), unit='h'))
-            miss = grid.isna().values
-            run = np.zeros(len(miss), dtype=int)
-            cur = 0
-            for i in range(len(miss)):
-                if i % per_day == 0:
-                    cur = 0
-                if miss[i]:
-                    cur += 1
-                    run[i] = cur
-                else:
-                    cur = 0
-            maxrun = pd.Series(run, index=grid.index).groupby(
-                grid.index.normalize()).max()
-            bad = maxrun[maxrun > max_gap_h].index
-            ok = ok.reindex(days.index, fill_value=False)
-            ok.loc[bad.intersection(days.index)] = False
     return days[ok]
 
 
-def cascade_to_annual(daily, gate=sp.GATE_FRAC, n_seasons=4):
-    """month -> season -> year, 90% gate at each level (month vs calendar
-    days, season vs 3 months); year = mean of the passing seasons, kept if
-    >= n_seasons of 4 pass (4 = locked handoff spec; 3 = relaxed practice).
-    Returns (annual, seas, dropped)."""
+def cascade_to_annual(daily, gate=0.80, min_months=10):
+    """Rule 1 + Rule 2 pooling (2026-09-25).
+
+    Rule 1 (annual): mean of the day values, year valid only if >= gate of
+      the year's expected days are present.
+    Rule 2 (seasonal): a season-year is valid only if all 3 of its months are
+      each >= gate of their calendar days (a monthly cascade, so "present"
+      means 90%-complete, not merely non-empty).  Meteorological DJF.
+    Returns (annual, seas, dropped).
+    """
     seas = pd.DataFrame(np.nan, index=list(sp.YEARS), columns=list(sp.SEASONS))
     seas.index.name = 'year'
     d = daily.dropna()
@@ -287,6 +240,22 @@ def cascade_to_annual(daily, gate=sp.GATE_FRAC, n_seasons=4):
         return (pd.Series(np.nan, index=list(sp.YEARS)), seas,
                 [(y, 'no days') for y in sp.YEARS])
     d = d.groupby(d.index.normalize()).mean()   # merge same-day duplicates
+
+    # ---- Rule 1: annual = direct day->year, >= gate of days AND >= min_months ----
+    annual = pd.Series(np.nan, index=list(sp.YEARS))
+    import calendar as _cal
+    yr = pd.Series(d.index.year, index=d.index)
+    for y in sp.YEARS:
+        sel = (yr == y)
+        n_exp = 366 if _cal.isleap(y) else 365
+        if int(sel.sum()) >= gate * n_exp:
+            # month-count floor: require data in >= min_months of the 12 months
+            if d.index[sel.values].month.nunique() < min_months:
+                continue
+            annual.loc[y] = float(d.values[sel.values].mean())
+    annual.name = 'annual'
+
+    # ---- Rule 2: seasonal = all 3 months present (each >= gate) ----
     cal = d.groupby(d.index.to_period('M'))
     nhave = cal.count()
     ncal = {p: (p.to_timestamp() + pd.offsets.MonthEnd(0)).day
@@ -294,23 +263,21 @@ def cascade_to_annual(daily, gate=sp.GATE_FRAC, n_seasons=4):
     months = cal.mean()
     months = months[[p for p in months.index if nhave[p] >= gate * ncal[p]]]
 
-    seas_of_m = pd.Series(months.index.month, index=months.index).map(sp.SEASON_OF_MONTH)
-    seas_of_y = pd.Series(months.index.year, index=months.index)
+    mo = pd.Series(months.index.month, index=months.index)
+    ay = pd.Series(months.index.year + (mo == 12), index=months.index)
+    seas_name = pd.Series(mo, index=months.index).map(
+        lambda m: sp.SEASON_OF_MONTH[m][0])
     for y in sp.YEARS:
         for st in sp.SEASONS:
-            m = ((seas_of_y == y) & (seas_of_m == st))
-            # 90% of the season's 3 months: 2.7 -> require at least 2 of 3
-            # complete months (a 1-of-3 season is 33% complete, far below 90%).
-            if int(m.sum()) >= 2:
-                seas.loc[y, st] = float(months.values[m].mean())
+            msk = (ay == y) & (seas_name == st)
+            if not msk.any():
+                continue
+            if not set(sp.SEASON_MONTHS[st]) <= set(mo[msk].tolist()):
+                continue            # a whole month of the season is absent
+            seas.loc[y, st] = float(months.values[msk].mean())
 
-    n_st = seas.notna().sum(axis=1)
-    keep = n_st >= n_seasons
-    annual = seas.mean(axis=1).where(keep)
-    annual.name = 'annual'
-    dropped = [(y, 'season(s) <90%% complete (%d/%d): %s' % (
-                  int(n_st.loc[y]), len(sp.SEASONS), ','.join(
-                      st for st in sp.SEASONS if np.isnan(seas.loc[y, st]))))
+    keep = annual.notna()
+    dropped = [(y, 'year <%.0f%% complete (Rule 1)' % (100 * gate))
                for y in sp.YEARS if not keep.loc[y]]
     return annual, seas, dropped
 
@@ -324,20 +291,26 @@ def main():
                     help='min shared surviving years for a buoy to enter the '
                          'CORE pool (default 8; handoff default was 15, which '
                          'is unattainable for these buoys)')
-    ap.add_argument('--year-gate', type=int, default=3, choices=(3, 4),
-                    help='min passing seasons for a surviving year '
-                         '(default 3; 4 = locked handoff spec, kept as strict file)')
+    ap.add_argument('--gate', type=float, default=0.80,
+                    help='Rule-1 annual gate (fraction of the year days that must '
+                         'be present; buoy default 0.80, relaxed from land 0.90)')
+    ap.add_argument('--day-gate', type=float, default=0.75,
+                    help="fraction of a day's 24 h that must be present for the "
+                         "day to be valid (buoy default 0.75 = 18 h)")
+    ap.add_argument('--min-months', type=int, default=10,
+                    help='min distinct months with data for a year to be valid '
+                         '(buoy default 10)')
     ap.add_argument('--tag', default='',
                     help='suffix added to output filenames (e.g. _strict)')
     ap.add_argument('--obs-root',
-                    default=os.environ.get(
-                        'BUOY_OBS_ROOT',
-                        '/gpfs/fs7/dfo/hpcmc/comda/fs2_comda/amh001/DATA/BuoyData'),
-                    help='dir holding MB_<ID>_HM.mat (override: $BUOY_OBS_ROOT)')
+                    default=os.path.join(BASE, 'data', 'buoy_obs'),
+                    help='dir with MB_<ID>_HM.mat (local copies in '
+                         'data/buoy_obs; source of record: '
+                         '/gpfs/fs7/dfo/hpcmc/comda/fs2_comda/amh001/DATA/BuoyData)')
     args = ap.parse_args()
 
     os.makedirs(os.path.join(BASE, 'pickles'), exist_ok=True)
-    os.makedirs(os.path.join(BASE, 'results'), exist_ok=True)
+    os.makedirs(os.path.join(BASE, 'files'), exist_ok=True)
 
     rows, surv, pk, surv_obs = [], [], {}, []
     d01_cache = {}  # basename -> hourly series (29 files, loaded once each... cache by path)
@@ -368,9 +341,8 @@ def main():
         # genuine hours.
         obs_hourly = pd.Series(obs_spd * H5, index=obs_idx)  # 5m -> 10m
         obs_hourly = obs_hourly.resample('h').mean()
-        obs_daily = daily_from_hourly(obs_hourly)
-        obs_annual, obs_seas, obs_dropped = cascade_to_annual(
-            obs_daily, n_seasons=args.year_gate)
+        obs_daily = daily_from_hourly(obs_hourly, gate=args.day_gate)
+        obs_annual, obs_seas, obs_dropped = cascade_to_annual(obs_daily, gate=args.gate, min_months=args.min_months)
         surv_years = [int(y) for y in sp.YEARS if not np.isnan(obs_annual.loc[y])]
         surv_obs.append(dict(buoy=bid, n_obs_years=len(surv_years),
                              obs_years=''.join(str(y)[-2:] for y in surv_years)))
@@ -416,15 +388,14 @@ def main():
             s = series[model]
             if s.empty:
                 rows.append(dict(buoy=bid, model=model, n_years=0, obs=np.nan,
-                                 model_mean=np.nan, bias=np.nan, bias_pct=np.nan,
-                                 mae=np.nan, rmse=np.nan, flag=flags[model]))
+                                 model_mean=np.nan, bias_pct=np.nan, mae=np.nan,
+                                 rmse=np.nan, flag=flags[model]))
                 surv.append(dict(buoy=bid, model=model, n_years=0, years='',
                                  flag=flags[model]))
                 continue
             hourly = (s.index[1] - s.index[0]) < pd.Timedelta(hours=2)
-            m_daily = daily_from_hourly(s, per_day=1) if not hourly else daily_from_hourly(s)
-            m_annual, m_seas, _ = cascade_to_annual(m_daily,
-                                                    n_seasons=args.year_gate)
+            m_daily = daily_from_hourly(s, per_day=1, gate=args.gate) if not hourly else daily_from_hourly(s, gate=args.day_gate)
+            m_annual, m_seas, _ = cascade_to_annual(m_daily, gate=args.gate, min_months=args.min_months)
             obs_a = obs_annual.reindex(surv_years)
             mod_a = m_annual.reindex(surv_years)
             ok = obs_a.notna() & mod_a.notna()
@@ -435,7 +406,6 @@ def main():
                 dm = (mod_a - obs_a)[ok]
                 r = dict(buoy=bid, model=model, n_years=n,
                          obs=float(obs_a[ok].mean()), model_mean=float(mod_a[ok].mean()),
-                         bias=float(dm.mean()),
                          bias_pct=float(100.0 * dm.mean() / obs_a[ok].mean()),
                          mae=float(dm.abs().mean()),
                          rmse=float(np.sqrt((dm ** 2).mean())), flag=flags[model])
@@ -443,8 +413,7 @@ def main():
                 r = dict(buoy=bid, model=model, n_years=n,
                          obs=float(obs_a[ok].mean()) if n else np.nan,
                          model_mean=float(mod_a[ok].mean()) if n else np.nan,
-                         bias=np.nan, bias_pct=np.nan, mae=np.nan, rmse=np.nan,
-                         flag=flags[model])
+                         bias_pct=np.nan, mae=np.nan, rmse=np.nan, flag=flags[model])
             rows.append(r)
             surv.append(dict(buoy=bid, model=model, n_years=n,
                              years=''.join(str(y)[-2:] for y in surv_years) if n else '',
@@ -462,32 +431,40 @@ def main():
     # years (default 8; the handoff's 15 is unattainable for these buoys —
     # obs records are 1989-2005 with ~10% wind NaN, so 15 clean years do not
     # exist). Core-set pooling is the apples-to-apples headline row.
-    pool_ids = sorted({r['buoy'] for r in rows if r['n_years'] >= args.min_years})
+    # Pinned pooled buoy set = the buoys present in the WRF D03 column.
+    # Pinning the set to D03 makes the pooled obs baseline identical across all
+    # five model columns (previously D03 pooled over fewer buoys, e.g. 46005 is
+    # off the D03 domain and only D03 drops it).  Each model column pools over
+    # this same set; a column missing a buoy simply skips that buoy.
+    core = {r['buoy'] for r in rows if r['n_years'] >= args.min_years}
+    d03_ids = {r['buoy'] for r in rows if r['model'] == 'WRF_d03' and r['n_years'] >= 1}
+    pool_ids = sorted(core & d03_ids)
     pool_rows = []
     for model in MODELS:
-        idx = [(b, model) for b in pool_ids if (b, model) in tab.index]
+        idx = [(b, model) for b in pool_ids if (b, model) in tab.index and
+               tab.loc[(b, model), 'n_years'] >= 1]
         if not idx:
             continue
         sub = tab.loc[idx]
         obs_pm, mod_pm = sub['obs'].mean(), sub['model_mean'].mean()
         pool_rows.append(dict(model=model, n_buoys=len(sub), obs=obs_pm,
-                              model_mean=mod_pm, bias=mod_pm - obs_pm,
+                              model_mean=mod_pm,
                               bias_pct=100.0 * (mod_pm - obs_pm) / obs_pm,
                               mae=sub['mae'].mean(), rmse=sub['rmse'].mean()))
     pool = pd.DataFrame(pool_rows).set_index('model') if pool_rows else pd.DataFrame()
 
     tag = args.tag
-    tab.to_csv(os.path.join(BASE, 'results/buoy_wind_bias%s.csv' % tag))
-    pool.to_csv(os.path.join(BASE, 'results/buoy_wind_bias_pooled%s.csv' % tag))
+    tab.to_csv(os.path.join(BASE, 'files/buoy_wind_bias%s.csv' % tag))
+    pool.to_csv(os.path.join(BASE, 'files/buoy_wind_bias_pooled%s.csv' % tag))
     with open(os.path.join(BASE, 'pickles/buoy_wind_tables%s.pkl' % tag), 'wb') as fh:
         pickle.dump(dict(tab=tab, pool=pool, per_buoy=pk,
                          min_years=args.min_years, H5=float(H5), truth=TRUTH), fh)
 
     print('\nBuoy wind bias — 5 model columns — obs 1986-2005 — '
-          'obs 5m->10m x%.4f (z0=%.5f) — year gate: >=%d/4 seasons\n'
-          % (H5, Z0, args.year_gate))
-    print('=== SURVIVING YEARS (headline; obs cascade, 90%% gate at day/'
-          'month/season, year=mean of >=%d passing seasons) ===' % args.year_gate)
+          'obs 5m->10m x%.4f (z0=%.5f) — Rule 1 annual (day>=%.0f%%, year>=%.0f%%, >=%d months)\n'
+          % (H5, Z0, 100 * args.day_gate, 100 * args.gate, args.min_months))
+    print('=== SURVIVING YEARS (headline; Rule 1, day>=%.0f%%, year>=%.0f%%, >=%d months) ==='
+          % (100 * args.day_gate, 100 * args.gate, args.min_months))
     o = surv_obs_df.reset_index()
     print(o[['buoy', 'n_obs_years', 'obs_years']].rename(
         columns={'n_obs_years': 'n_years', 'obs_years': 'years'}).to_string(index=False))
@@ -498,11 +475,11 @@ def main():
         print(tab.reset_index()[['buoy', 'model', 'n_years', 'obs', 'model_mean',
                                  'bias_pct', 'mae', 'rmse', 'flag']].to_string(index=False))
 
-    print('\n=== POOLED CORE (mean of period stats over buoys with >=%d '
-          'shared surviving years — apples-to-apples headline) ===' % args.min_years)
+    print('\n=== POOLED (pinned buoy set = WRF D03 column: %s) ==='
+          % ', '.join(pool_ids))
     if len(pool):
         print(pool.to_string())
-    print('\nWrote results/buoy_wind_bias%s.csv, results/buoy_wind_bias_pooled%s.csv, '
+    print('\nWrote files/buoy_wind_bias%s.csv, files/buoy_wind_bias_pooled%s.csv, '
           'pickles/buoy_wind_tables%s.pkl' % (tag, tag, tag))
 
 
