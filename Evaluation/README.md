@@ -11,7 +11,7 @@ subfolder; the shared skill-calculation modules are single copies (below).
 | subfolder | contents |
 |-----------|----------|
 | `climate_taylor/` | 3-panel climate Taylor diagram (T/PR/wind, 20-yr climatologies, 5 models) — `climate_all_taylor.py` + notebook, `taylor_figure.py`. |
-| `bias_figure/` | D03 station-bias figure (climatology maps + gated bias dots): `bias_figure.ipynb` (plot) + `make_bias_figure.py` (compute) + `taylor_data.py` (station sets/annual series) + `make_climo_d03.py`. |
+| `bias_figure/` | D03 station-bias figure (climatology maps + gated bias dots): `bias_figure.ipynb` (plot) + `make_bias_figure.py` (compute) + `taylor_data.py` (station sets/annual series); the climatology builder `make_climo_d03.py` lives in `DataPrep/`. |
 | `bias_comparisons/` | Multi-model station-bias maps (D02/D01/CanRCM4/CanESM2 rows × T/PR/wind cols): `bias_comparisons.ipynb` (fiddle) + `make_bias_comparisons.py` (twin). |
 | `elevation_bias/` | Elevation-bias diagnostic grid + the **shared skill-calc core**: `seasonal_pooling.py` (Rule 1/2 pooling gate, `skill()`), `make_station_tables.py` (canonical 173-land-row table), `make_skill_tables.py` (skill-table projection), `make_r2_table.py` (report R² column), grid scripts + notebook, result tables in `results/`. |
 | `buoy_validation/` | D03 buoy validation (8 tas, 7 wind; relaxed 75 %/80 % gates): `buoy_{tas,wind}_bias.py`, extraction/weight scripts, validated-table results in `results/`. |

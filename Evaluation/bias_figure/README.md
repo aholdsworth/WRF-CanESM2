@@ -16,7 +16,7 @@ T; % for PR and wind).
 | `make_bias_figure.py`      | COMPUTE step (15–20 min): reads all obs + WRF d03 per-station files, computes everything, saves `pickles/bias_figure.pkl` + `pickles/bias_filter_comparison.csv`. |
 | `seasonal_pooling.py`      | (shared, at `elevation_bias/seasonal_pooling.py`) — Rule 1/2 pooling gate + `skill()` aggregation; the scripts here import it from that one canonical location. |
 | `taylor_data.py`           | Station-set + WRF/Can* per-station file readers and annual series builders used by `make_bias_figure.py` (canonical 173-land-row sets from `station_tables.pkl`). |
-| `make_climo_d03.py`        | Builds `pickles/climo_d03_hist.pkl` — the gridded 1986–2005 d03 climatology (t degC, pr mm/day, wind m/s) the notebook shows in the top row. |
+| `make_climo_d03.py`        | (now in `DataPrep/`) — builds `pickles/climo_d03_hist.pkl`, the gridded 1986–2005 d03 climatology the notebook's top row reads. |
 
 The notebook also imports `WRFDomainLib` (at the **repo root** — `sys.path.insert(0,
 repo_root)`, i.e. the parent of this folder's sibling layout in the main
