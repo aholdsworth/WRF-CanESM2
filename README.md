@@ -18,43 +18,57 @@ CanESM2, and NA-CORDEX/CMIP5 ensemble fields.
 | `DataPrep/` | CF conversion (`cf_convert.py`) + station/buoy data extraction (`make_wrf_canon.py`, `extract_canrcm4_stations.py`, per-buoy `.sh`, climatology). See its README. |
 | `mean_changes/` | Seasonal/annual mean-change scripts (deltas + t-tests for WRF d03, CanRCM4, CanESM2) and the `plot_means_*` notebooks (incl. CORDEX/CMIP5 comparison panels), annual averages, and elevation-binned change. |
 | `extremes/` | Block-bootstrap scripts for extreme-percentile significance (per-gridcell and pooled land/ocean regional null test) and the `plot_extremes*` notebooks. (Station-level p75/p95 validation lives in `Evaluation/extremes_validation/`. |
-| `elevation_bias/` | — moved to `Evaluation/elevation_bias/` (see `Evaluation/`). |
 | `CompoundEvents/` | Two-stage compound-extremes pipeline: per-DOY rolling percentile thresholds, then counts of warm/cold x wet/dry compound event days; drizzle-day counts; plotting notebooks. |
 | `compression/` | Compression/PPC verification notebooks and scripts for the WRF d03 run. |
 | `land_and_ocean/` | Regional-average (land/ocean) analysis notebooks. |
 | `WRFDomainLib.py` | Shared helpers for the WRF d03 domain (coordinates, masks, plotting). |
 
-## Elevation-bias diagnostic grid — headline tables
+## Where to read the results
 
-From `elevation_bias/` (1986–2005 mean, 175 stations; sign = model − obs).
-Full tables, methods and the absolute-PR (mm/day) re-expression are in
-[`elevation_bias/results/elev_bias_results_for_report.md`](elevation_bias/results/elev_bias_results_for_report.md).
+Result tables and methods are committed in each subfolder's `results/`
+directory (not in this README):
 
-**Elevation bias (m)** — model orography − observed station elevation
-(extraction-consistent / CDO bicubic-weight orography):
+- Report-grade Table 1 (mean annual bias, RMSE, pooled R², 5 models ×
+  T/P/wind) and Table 2 (buoys): built from the canonical pickles, see
+  `Evaluation/elevation_bias/results/` and `Evaluation/buoy_validation/results/`.
+- Elevation-bias diagnostic grid: `Evaluation/elevation_bias/results/`
+  (`elev_bias_results_for_report.md`, `skill_summary.csv`,
+  `skill_table_bias_mae_rmse.tex`) + methods in `elev_bias_methods_math.md`.
+- Taylor diagrams, bias figures: `Evaluation/climate_taylor/` and
+  `Evaluation/bias_figure/` (PNGs are regenerated locally, not committed).
 
-| Row | n | median (m) | std (m) | mean (m) |
-|-----|---|-----------:|--------:|---------:|
-| D3 (WRF d03) | 164 | 41.6 | 165.5 | 89.8 |
-| D15 (WRF d02) | 164 | 170.3 | 300.6 | 247.2 |
-| D75 (WRF d01) | 164 | 304.6 | 318.1 | 331.7 |
-| CanRCM4 | 164 | 242.3 | 348.8 | 294.3 |
-| CanESM2 | 164 | 391.2 | 368.5 | 375.4 |
+These numbers supersede any earlier hand-derived values (the verification
+pipeline had unit/gate bugs, all fixed 2026-09-25…29; see the per-folder
+READMEs).
 
-**Pooled seasonal skill** (bias / MAE / RMSE, season-pooled per-station;
-15 rows = 5 datasets × {t, pr, wind}; see `elevation_bias/results/skill_summary.csv`):
+## How to run
 
-| dataset | T bias (°C) | T RMSE (°C) | PR bias (%) | PR RMSE (%) | wind bias (%) |
-|---------|------------:|------------:|------------:|------------:|--------------:|
-| D03 (3 km) | −1.03 | 1.64 | +380 | 918 | +22.5 |
-| D02 (15 km) | −2.04 | 2.37 | +831 | 2071 | +25.3 |
-| D01 (~75 km) | −3.07 | 3.33 | +997 | 2243 | −2.8 |
-| CanESM2 | −1.94 | 2.59 | +715 | 980 | +47.6 |
-| CanRCM4 | −3.60 | 3.80 | +508 | 1272 | +48.4 |
+All `Evaluation/` scripts run from the **analysis working tree** (this
+repo is a *subfolder* of it) using the `py_2024` environment, with
 
-All five rows are positively biased in elevation (coarser grid → higher
-orography). Cold temperature bias grows with coarseness. The coarse Can* rows
-show a large dry precipitation bias (median ≈ −90 %, ≈ −28 mm/day).
+    export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1   # OpenBLAS thread-spin gotcha
+
+Dependency order (each step caches to `pickles/`):
+
+1. `DataPrep/` — CF conversion (`cf_convert.py`) and per-station/per-buoy
+   extractions (`make_wrf_canon.py`, `extract_canrcm4_stations.py`, buoy
+   `.sh` scripts) → `data/wrf_canon/`, `data/cdo_extractions/`.
+2. `make_station_tables.py` → `pickles/station_tables.pkl` — the **single
+   canonical land table** (173 stations × 5 models); everything downstream
+   takes station sets from it.
+3. `make_skill_tables.py` (seconds; projection of the table),
+   `make_bias_figure.py` + `bias_figure.ipynb`, `taylor_data.py` +
+   `taylor_figure.py`, buoy `buoy_{tas,wind}_bias.py`,
+   `extremes_validation/` — all read the table or the validated buoy pickles.
+
+## Data
+
+Data files are **not** in this repository. The canonical working-tree
+locations (`data/`, `pickles/`, `files/`, `plotting_files/`, `report/`),
+formats, sizes and checksums are documented in [`DATA.md`](DATA.md);
+observations (NOAA GHCN-d, ECCC, BC BCH, buoys) and model output (WRF
+d01–d03 driven by CanESM2, CanRCM4, raw CanESM2, NA-CORDEX/CMIP5) are
+archived out-of-band.
 
 ## Notes
 
@@ -62,6 +76,5 @@ show a large dry precipitation bias (median ≈ −90 %, ≈ −28 mm/day).
   contain **absolute paths** to the original data on the HPC system where the
   analysis was run; edit the path constants at the top of each script before
   re-running.
-- Data files are not stored in this repository; each folder's README
-  documents the expected inputs/outputs and the notebook-to-script
-  relationships.
+- Each folder's README documents its expected inputs/outputs and the
+  notebook-to-script relationships.

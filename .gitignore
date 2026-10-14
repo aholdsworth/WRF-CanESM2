@@ -25,3 +25,8 @@ _CONTEXT_ADD_CODE.md
 !extremes_validation/results/*.csv
 
 
+
+# backups and regenerable caches
+*.bak*
+*Cache.pkl
+*_cache.pkl

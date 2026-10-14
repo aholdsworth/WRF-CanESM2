@@ -23,7 +23,7 @@ subfolder; the shared skill-calculation modules are single copies (below).
 
 | module | home | used by |
 |--------|------|---------|
-| `seasonal_pooling.py` | `elevation_bias/` | bias_figure, bias_comparisons, extremes_validation, make_skill_tables, make_r2_table, buoy scripts (via the workspace copy) |
+| `seasonal_pooling.py` | `elevation_bias/` | bias_figure, bias_comparisons, extremes_validation, make_skill_tables, make_r2_table, buoy scripts (via `../elevation_bias` path insert) |
 | `taylor_data.py` | `bias_figure/` | make_bias_figure.py (station sets, WRF/Can* annual series) |
 | `taylor_figure.py` | `climate_taylor/` | climate_all_taylor, p95 Taylor |
 

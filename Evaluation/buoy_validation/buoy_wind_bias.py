@@ -63,7 +63,7 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'elevation_bias'))  # shared seasonal_pooling.py (single copy)
 import seasonal_pooling as sp  # ANNUAL_GATE, SEASONS, YEARS, MIN_YEARS, SEASON_OF_MONTH, ...
 
 # ---------------------------------------------------------------------------

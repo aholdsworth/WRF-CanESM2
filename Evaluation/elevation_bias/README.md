@@ -96,6 +96,9 @@ The committed tables live in `results/`:
   elevation-bias summary tables (per-station medians/stds from
   `station_tables.pkl`, plus the absolute-PR mm/day table) for the report.
 * **`elev_bias_methods_math.md`** — the equations (plain text + LaTeX).
+* **`skill_abs_table.csv` / `skill_table_bias_mae_rmse.tex`** — the
+  absolute-unit skill table (P in mm/day, wind in m/s, T pinned from
+  `skill_summary.csv`), produced by `make_abs_skill_table.py`.
 
 A condensed version of the headline tables is also in the top-level
 `README.md`.
