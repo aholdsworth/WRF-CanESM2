@@ -44,7 +44,10 @@ READMEs).
 ## How to run
 
 All `Evaluation/` scripts run from the **analysis working tree** (this
-repo is a *subfolder* of it) using the `py_2024` environment, with
+repo is a *subfolder* of it) using the Python environment defined in
+[`environment.yaml`](environment.yaml) — the strict import set of this
+code, pinned to the `py_2024` snapshot (Python 3.9.19; build with
+`conda env create -f environment.yaml`) — with
 
     export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1   # OpenBLAS thread-spin gotcha
 

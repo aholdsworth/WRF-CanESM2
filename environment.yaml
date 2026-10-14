@@ -1,0 +1,39 @@
+# Python environment for the WRF-CanESM2 analysis code.
+#
+# Snapshot of the environment the code was developed and verified in
+# (py_2024: Python 3.9.19), recorded 2026-10-14.  The package list is the
+# STRICT import set of the tracked code (all .py scripts and .ipynb code
+# cells); nothing is included unless a module in this repo imports it.
+#
+#   numpy, pandas, netCDF4, matplotlib (+mpl_toolkits), scipy, xarray,
+#   cartopy          -- core verification pipeline (Evaluation/, DataPrep/)
+#   cftime           -- netCDF4 time handling (seasonal_pooling, extractors)
+#   pillow (PIL)     -- bias_figure.ipynb
+#   seaborn          -- mean_changes plotting notebooks
+#   dask             -- CompoundEvents/compute_percentiles_rolling.py
+#   joblib           -- extremes/bootstrap_* (Memory cache)
+#   shapely          -- WRFDomainLib.py (domain mask)
+#
+# Build:  conda env create -f environment.yaml     (or mamba)
+# Non-Python tool used by DataPrep/ (CDO CLI) is a system package, not
+# listed here.  Always run with OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1
+# (OpenBLAS thread-spin hang, see README "How to run").
+
+name: wrf-canesm2
+channels:
+  - conda-forge
+dependencies:
+  - python=3.9.19
+  - numpy=1.26.4
+  - pandas=2.2.2
+  - netcdf4=1.6.0
+  - matplotlib=3.9.1
+  - scipy=1.13.1
+  - xarray=2024.7.0
+  - cartopy=0.23.0
+  - cftime=1.6.4
+  - pillow=10.4.0
+  - seaborn=0.13.2
+  - dask=2024.8.0
+  - joblib=1.4.2
+  - shapely=2.0.5
