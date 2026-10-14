@@ -48,6 +48,21 @@ repo is a *subfolder* of it) using the `py_2024` environment, with
 
     export OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1   # OpenBLAS thread-spin gotcha
 
+All scripts resolve their **working tree root** automatically: the
+nearest directory above the script (checked up to 6 levels) that contains
+`data/` and `pickles/`.  This works in both supported layouts:
+
+- **HPC working tree:** this repo is a subfolder of the analysis tree
+  (`AI_WORKDIR/NOTEBOOKS/`), which holds the data — scripts run from the
+  repo subfolder unchanged.
+- **Portable clone:** check out this repo and extract the data archive
+  (`DATA.md`) **at the repo root**, so `data/`, `pickles/`, `files/`,
+  `plotting_files/`, `report/`, `weight_files_gen/`, `station_cdo/` sit
+  beside `Evaluation/`.
+
+Override the resolved root with `export WRF_CANESM2_BASE=/path/to/root`
+(e.g. to point a clone at a mounted working tree).
+
 Dependency order (each step caches to `pickles/`):
 
 1. `DataPrep/` — CF conversion (`cf_convert.py`) and per-station/per-buoy

@@ -76,7 +76,28 @@ MODELS = ('WRF_d01', 'WRF_d02', 'WRF_d03', 'CanESM2', 'CanRCM4')
 # D03 exclusion: 46005's nearest D03 cell is 1.156 deg away (off-domain
 # artifact at the domain edge); all other buoys are within 0.018 deg.
 D03_EXCLUDE = {'46005': 'off D03 domain (nearest cell 1.16 deg away)'}
-BASE = os.path.dirname(os.path.abspath(__file__))
+def _workroot(start):
+    """Nearest ancestor of `start` (inclusive) that is the analysis working
+    tree, i.e. the directory containing data/ and pickles/.  Works both when
+    this repo is a subfolder of the HPC working tree and when a fresh clone
+    is unpacked with the data archive (DATA.md) at the repo root.
+    Override with the WRF_CANESM2_BASE environment variable."""
+    d = os.path.abspath(start)
+    for _ in range(6):
+        if (os.path.isdir(os.path.join(d, 'data'))
+                and os.path.isdir(os.path.join(d, 'pickles'))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise SystemExit(
+        'WRF-CanESM2 working tree not found: no ancestor of %s contains '
+        'data/ + pickles/.  Extract the data archive there (see DATA.md) '
+        'or set WRF_CANESM2_BASE.' % start)
+
+
+BASE = os.environ.get('WRF_CANESM2_BASE') or _workroot(os.path.dirname(os.path.abspath(__file__)))
 
 # Fingerprint of the (day-gate, year-gate, min-months) cascade that a saved
 # obs pickle was built with.  The obs daily series in

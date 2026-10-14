@@ -17,6 +17,8 @@ tree) is `DATA_INVENTORY.md` in the working tree root.
 | `files/` | 3.7 M | station/buoy metadata CSVs (station lists per agency + variable) |
 | `report/` | 1.2 M | `verification_report.tex` + table `.tex` outputs |
 | `Eva_data/` | 797 M | Eva's original comparison inputs (reference only) |
+| `weight_files_gen/` | 366 M | locally regenerated CDO bicubic remap weights (Can* ECCC/BCH; used by `station_geo._can_weight_file` as the non-PFM source) |
+| `station_cdo/` | 31 M | CDO extraction scripts + buoy descs + `eccc_bch_desc_map.json` + extraction logs (the desc map and buoy descs are also tracked in the repo under `Evaluation/`) |
 | `CanESM2_raw-20260922T164025Z-1-001.zip` | 241 M | original source archive (see below) |
 
 ## Model data (1986–2005, historical)
@@ -66,9 +68,9 @@ development sandbox; GitHub LFS is not configured for it). Before transfer:
 
 ```bash
 cd AI_WORKDIR/NOTEBOOKS
-find data pickles files plotting_files report -type f -print0 \
+find data pickles files plotting_files report weight_files_gen station_cdo -type f -print0 \
   | xargs -0 sha256sum > data_archive.sha256   # regenerate before each transfer
-tar -cJf wrf-canesm2-data-20261014.tar.xz data pickles files plotting_files report
+tar -cJf wrf-canesm2-data-20261014.tar.xz data pickles files plotting_files report weight_files_gen station_cdo
 ```
 
 Verify on the receiving side with `sha256sum -c data_archive.sha256`

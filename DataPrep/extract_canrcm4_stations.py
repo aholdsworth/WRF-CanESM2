@@ -37,8 +37,30 @@ import numpy as np
 import pandas as pd
 from netCDF4 import Dataset
 
-BASE = '/gpfs/fs7/dfo/hpcmc/comda/fs2_comda/amh001/AI_WORKDIR/NOTEBOOKS'
+def _workroot(start):
+    """Nearest ancestor of `start` (inclusive) that is the analysis working
+    tree, i.e. the directory containing data/ and pickles/.  Works both when
+    this repo is a subfolder of the HPC working tree and when a fresh clone
+    is unpacked with the data archive (DATA.md) at the repo root.
+    Override with the WRF_CANESM2_BASE environment variable."""
+    d = os.path.abspath(start)
+    for _ in range(6):
+        if (os.path.isdir(os.path.join(d, 'data'))
+                and os.path.isdir(os.path.join(d, 'pickles'))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise SystemExit(
+        'WRF-CanESM2 working tree not found: no ancestor of %s contains '
+        'data/ + pickles/.  Extract the data archive there (see DATA.md) '
+        'or set WRF_CANESM2_BASE.' % start)
+
+
+BASE = os.environ.get('WRF_CANESM2_BASE') or _workroot(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, BASE)
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'Evaluation', 'elevation_bias'))  # station_geo.py (repo copy)
 DATA = os.path.join(BASE, 'data')
 OUT_DIR = os.path.join(DATA, 'canrcm4_stations')
 os.makedirs(OUT_DIR, exist_ok=True)

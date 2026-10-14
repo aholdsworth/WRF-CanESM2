@@ -16,10 +16,31 @@ warnings.filterwarnings('ignore')
 # Regenerate in the main verification workspace (NOTEBOOKS/) via
 #   python taylor_data.py
 # which reads the raw WRF/CanESM2/CanRCM4 + obs data and writes the cache.
-BASE = os.path.dirname(os.path.abspath(__file__))
+def _workroot(start):
+    """Nearest ancestor of `start` (inclusive) that is the analysis working
+    tree, i.e. the directory containing data/ and pickles/.  Works both when
+    this repo is a subfolder of the HPC working tree and when a fresh clone
+    is unpacked with the data archive (DATA.md) at the repo root.
+    Override with the WRF_CANESM2_BASE environment variable."""
+    d = os.path.abspath(start)
+    for _ in range(6):
+        if (os.path.isdir(os.path.join(d, 'data'))
+                and os.path.isdir(os.path.join(d, 'pickles'))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise SystemExit(
+        'WRF-CanESM2 working tree not found: no ancestor of %s contains '
+        'data/ + pickles/.  Extract the data archive there (see DATA.md) '
+        'or set WRF_CANESM2_BASE.' % start)
+
+
+BASE = os.environ.get('WRF_CANESM2_BASE') or _workroot(os.path.dirname(os.path.abspath(__file__)))
 PKL = os.environ.get(
     'TAYLOR_ANNUALS_PKL',
-    os.path.join(BASE, '..', '..', 'pickles', 'taylor_annuals.pkl'))
+    os.path.join(BASE, 'pickles', 'taylor_annuals.pkl'))
 with open(PKL, 'rb') as f:
     TA = pickle.load(f)
 print('taylor cache version:', TA['_version'])

@@ -39,7 +39,28 @@ import pandas as pd
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
-BASE = os.path.dirname(os.path.abspath(__file__))
+def _workroot(start):
+    """Nearest ancestor of `start` (inclusive) that is the analysis working
+    tree, i.e. the directory containing data/ and pickles/.  Works both when
+    this repo is a subfolder of the HPC working tree and when a fresh clone
+    is unpacked with the data archive (DATA.md) at the repo root.
+    Override with the WRF_CANESM2_BASE environment variable."""
+    d = os.path.abspath(start)
+    for _ in range(6):
+        if (os.path.isdir(os.path.join(d, 'data'))
+                and os.path.isdir(os.path.join(d, 'pickles'))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise SystemExit(
+        'WRF-CanESM2 working tree not found: no ancestor of %s contains '
+        'data/ + pickles/.  Extract the data archive there (see DATA.md) '
+        'or set WRF_CANESM2_BASE.' % start)
+
+
+BASE = os.environ.get('WRF_CANESM2_BASE') or _workroot(os.path.dirname(os.path.abspath(__file__)))
 TABLE_PKL = os.path.join(BASE, 'pickles', 'station_tables.pkl')
 OUT_SKILL = os.path.join(BASE, 'pickles', 'skill_seasonal.pkl')
 OUT_SUM   = os.path.join(BASE, 'pickles', 'skill_summary.pkl')

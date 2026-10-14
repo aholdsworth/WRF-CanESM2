@@ -3,8 +3,29 @@ import json, os
 # Repo root = the directory containing this folder's parent's parent:
 # this file lives at <repo>/extremes_validation/ in the publication repo
 # (workspace copy: <workspace>/WRF-CanESM2/extremes_validation/).
-REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-BASE = os.path.dirname(REPO_DIR)   # analysis working tree (parent of the repo)
+REPO_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))   # repo root
+def _workroot(start):
+    """Nearest ancestor of `start` (inclusive) that is the analysis working
+    tree, i.e. the directory containing data/ and pickles/.  Works both when
+    this repo is a subfolder of the HPC working tree and when a fresh clone
+    is unpacked with the data archive (DATA.md) at the repo root.
+    Override with the WRF_CANESM2_BASE environment variable."""
+    d = os.path.abspath(start)
+    for _ in range(6):
+        if (os.path.isdir(os.path.join(d, 'data'))
+                and os.path.isdir(os.path.join(d, 'pickles'))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise SystemExit(
+        'WRF-CanESM2 working tree not found: no ancestor of %s contains '
+        'data/ + pickles/.  Extract the data archive there (see DATA.md) '
+        'or set WRF_CANESM2_BASE.' % start)
+
+
+BASE = os.environ.get('WRF_CANESM2_BASE') or _workroot(os.path.dirname(os.path.abspath(__file__)))  # analysis working tree
 OUT=os.path.join(REPO_DIR,'extremes_validation','extreme_p95.ipynb')
 def md(s): return {'cell_type':'markdown','metadata':{},'source':s.splitlines(keepends=True)}
 def code(s): return {'cell_type':'code','execution_count':None,'metadata':{},'outputs':[],'source':s.splitlines(keepends=True)}

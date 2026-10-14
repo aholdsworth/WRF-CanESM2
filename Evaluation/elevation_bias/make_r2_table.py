@@ -13,26 +13,42 @@ Run with OPENBLAS_NUM_THREADS=1 (avoid 129-thread corrcoef spin):
   OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python make_r2_table.py
   OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1 python make_r2_table.py --cached
 """
-import os, sys, pickle, datetime, warnings, ast
+import os, sys, pickle, datetime, warnings
 import numpy as np, pandas as pd
 from netCDF4 import Dataset
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 warnings.filterwarnings("ignore", category=RuntimeWarning)
-BASE = os.path.dirname(os.path.abspath(__file__)); DATA = os.path.join(BASE, 'data')
-sys.path.insert(0, BASE)
+def _workroot(start):
+    """Nearest ancestor of `start` (inclusive) that is the analysis working
+    tree, i.e. the directory containing data/ and pickles/.  Works both when
+    this repo is a subfolder of the HPC working tree and when a fresh clone
+    is unpacked with the data archive (DATA.md) at the repo root.
+    Override with the WRF_CANESM2_BASE environment variable."""
+    d = os.path.abspath(start)
+    for _ in range(6):
+        if (os.path.isdir(os.path.join(d, 'data'))
+                and os.path.isdir(os.path.join(d, 'pickles'))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise SystemExit(
+        'WRF-CanESM2 working tree not found: no ancestor of %s contains '
+        'data/ + pickles/.  Extract the data archive there (see DATA.md) '
+        'or set WRF_CANESM2_BASE.' % start)
+
+
+BASE = os.environ.get('WRF_CANESM2_BASE') or _workroot(os.path.dirname(os.path.abspath(__file__)))
+DATA = os.path.join(BASE, 'data')
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))  # seasonal_pooling.py / station_geo.py (same dir)
 import seasonal_pooling as sp
 WRF_ST_DIR = os.path.join(DATA, 'wrf_canon')
 CACHE = os.path.join(BASE, 'pickles', '_obs_annual_cache.pkl')
 
 def _loaders():
-    src = open(os.path.join(BASE,'plot_elev_bias_revised.py')).read(); tree = ast.parse(src)
-    ls = ''
-    for n in tree.body:
-        if isinstance(n, ast.FunctionDef) and n.name in ('load_eccc','load_bch','load_noaa'):
-            ls += ast.get_source_segment(src, n) + '\n\n'
-    ns = {'os':os,'pd':pd,'open':open,'csv':__import__('csv'),'BASE':BASE,'STATION_DIR':os.path.join(BASE,'files')}
-    exec(compile(ls,'l','exec'), ns)
-    land = [str(i) for i in ns['load_eccc']()[0]] + [str(i) for i in ns['load_bch']()[0]] + list(ns['load_noaa']('NOAA_d03_stations.csv')[0])
+    from station_geo import load_eccc, load_bch, load_noaa
+    land = [str(i) for i in load_eccc()[0]] + [str(i) for i in load_bch()[0]] + list(load_noaa('NOAA_d03_stations.csv')[0])
     return land
 def wrf_st_files(var, dom):
     out = {}

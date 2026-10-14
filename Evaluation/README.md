@@ -48,9 +48,12 @@ module.
 
 ## Data (not in this repo)
 
-Everything runs from the analysis working tree (the repo's parent):
-`data/` (wrf_canon, cdo_extractions, obs), `pickles/` (canonical caches),
-`files/` (station lists), `plotting_files/` (geo_em, bathymetry, orog),
-`report/` (tex outputs). Data extraction lives in `DataPrep/`.
+Everything runs from the **analysis working tree root**, which each
+script resolves automatically (nearest ancestor containing `data/` +
+`pickles/`; override with `WRF_CANESM2_BASE`).  Two supported layouts:
+this repo as a subfolder of the HPC working tree, or a fresh clone with
+the data archive extracted at the repo root (`data/`, `pickles/`,
+`files/`, `plotting_files/`, `weight_files_gen/`, `station_cdo/` — see
+`DATA.md`).  Data extraction lives in `DataPrep/`.
 Run with the `py_2024` environment and
 `OMP_NUM_THREADS=1 OPENBLAS_NUM_THREADS=1` (OpenBLAS thread-spin gotcha).

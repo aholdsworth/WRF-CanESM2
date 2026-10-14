@@ -26,7 +26,7 @@ Layout revision (spacing fixes):
 Run with the py_2024 environment:
   /home/amh001/space_fs7/software_2022/python/py_2024/bin/python taylor_figure.py
 """
-import os
+import os, sys
 import warnings
 import numpy as np
 from scipy.stats import pearsonr
@@ -41,7 +41,29 @@ warnings.filterwarnings("ignore")
 # ----------------------------------------------------------------------------
 # Paths & style
 # ----------------------------------------------------------------------------
-BASE = os.path.dirname(os.path.abspath(__file__))
+def _workroot(start):
+    """Nearest ancestor of `start` (inclusive) that is the analysis working
+    tree, i.e. the directory containing data/ and pickles/.  Works both when
+    this repo is a subfolder of the HPC working tree and when a fresh clone
+    is unpacked with the data archive (DATA.md) at the repo root.
+    Override with the WRF_CANESM2_BASE environment variable."""
+    d = os.path.abspath(start)
+    for _ in range(6):
+        if (os.path.isdir(os.path.join(d, 'data'))
+                and os.path.isdir(os.path.join(d, 'pickles'))):
+            return d
+        parent = os.path.dirname(d)
+        if parent == d:
+            break
+        d = parent
+    raise SystemExit(
+        'WRF-CanESM2 working tree not found: no ancestor of %s contains '
+        'data/ + pickles/.  Extract the data archive there (see DATA.md) '
+        'or set WRF_CANESM2_BASE.' % start)
+
+
+BASE = os.environ.get('WRF_CANESM2_BASE') or _workroot(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'bias_figure'))  # taylor_data.py
 OUT_DIR = os.path.join(BASE, 'figures', 'taylor')
 os.makedirs(OUT_DIR, exist_ok=True)
 OUT = os.path.join(OUT_DIR, 'taylor_3panel.png')
